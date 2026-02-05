@@ -12,12 +12,19 @@ __pycache__/
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
-# # Data files (typically too large for git or generated locally)
-# data/raw/
-# data/processed/
-# *.csv
-# *.json
+# Large model files (>50MB)
+*.h5
+*.onnx
+*.pt
+*.safetensors
+
+# Documentation (commented for now)
+*.md
 
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Uncomment if models get too large in future:
+# models/*.pkl
+# !models/player_xgb_v1.pkl  # Allow small XGBoost model
