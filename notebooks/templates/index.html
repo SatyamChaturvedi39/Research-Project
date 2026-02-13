@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+    <video class="fullscreen-video" autoplay loop muted playsinline>
+        <source src="{{ url_for('static', filename='rock-video.mp4') }}" type="video/mp4">
+    </video>
+
+    <div class="video-overlay"></div>
+
+    <header class="main-header">
+        <div class="logo">
+            <span class="logo-icon">🎯</span>
+            <span class="logo-text">YourBrand</span>
+        </div>
+
+        <nav class="main-nav">
+            <ul>
+                <li><a href="#">Energy Drinks</a></li>
+                <li><a href="#">Events</a></li>
+                <li><a href="#">Athletes</a></li>
+                <li><a href="#">Brand TV</a></li>
+            </ul>
+        </nav>
+
+        <div class="header-icons">
+            <button class="icon-btn">👤</button>
+            <button class="icon-btn">🔍</button>
+        </div>
+    </header>
+
+    <section class="hero-section">
+        <section class="hero-content">
+            <div class="hero-small-title">HOVERAir</div>
+            <h1 class="hero-main-title">The ultimate<br>wingman</h1>
+            <p class="hero-description">Introducing the HOVERAir X1 PRO and X1<br>PROMAX - the most advanced flying
+                action<br>cameras for your next adventure</p>
+        </section>
+
+        <div class="scroll-indicator">
+            <span class="scroll-text">SCROLL TO EXPLORE</span>
+            <span class="scroll-dot"></span>
+        </div>
+    </section>
+
+    <section class="trade-analyzer" id="trade-analyzer">
+        <div class="trade-container">
+            <h2 class="section-heading">NBA Trade Analyzer</h2>
+
+            <div class="teams-header">
+                <div class="team-selector">
+                    <label>Team A:</label>
+                    <select id="teamA" class="team-dropdown">
+                        <option value="lakers">Lakers</option>
+                        <option value="celtics">Celtics</option>
+                        <option value="warriors">Warriors</option>
+                        <option value="heat">Heat</option>
+                    </select>
+                </div>
+                <div class="trade-arrow">↔ TRADE ↔</div>
+                <div class="team-selector">
+                    <label>Team B:</label>
+                    <select id="teamB" class="team-dropdown">
+                        <option value="celtics" selected>Celtics</option>
+                        <option value="lakers">Lakers</option>
+                        <option value="warriors">Warriors</option>
+                        <option value="heat">Heat</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="players-section">
+                <div class="players-column outgoing">
+                    <h3>Outgoing Players</h3>
+                    <div class="players-list" id="outgoing-players">
+                        <div class="player-card">
+                            <div class="player-name">LeBron James</div>
+                            <div class="player-stat">PPG: 28.5</div>
+                            <div class="player-stat">Age: 39</div>
+                            <button class="remove-btn" onclick="removePlayer(this)">Remove</button>
+                        </div>
+                    </div>
+                    <button class="add-player-btn" onclick="addPlayer('outgoing')">+ Add Player</button>
+                </div>
+
+                <div class="vs-divider">VS</div>
+
+                <div class="players-column incoming">
+                    <h3>Incoming Players</h3>
+                    <div class="players-list" id="incoming-players">
+                        <div class="player-card">
+                            <div class="player-name">Jayson Tatum</div>
+                            <div class="player-stat">PPG: 27.2</div>
+                            <div class="player-stat">Age: 26</div>
+                            <button class="remove-btn" onclick="removePlayer(this)">Remove</button>
+                        </div>
+                    </div>
+                    <button class="add-player-btn" onclick="addPlayer('incoming')">+ Add Player</button>
+                </div>
+            </div>
+
+            <button class="analyze-btn" onclick="analyzeTrade()">Analyze Trade</button>
+
+            <div class="results-dashboard" id="results-dashboard" style="display: none;">
+                <div class="success-score">
+                    <div class="score-label">Trade Success Score</div>
+                    <div class="score-value" id="score-value">74.2</div>
+                    <div class="score-max">/ 100</div>
+                </div>
+
+                <div class="results-grid">
+                    <div class="chart-container">
+                        <h4>ΔWins Chart</h4>
+                        <div class="chart-placeholder">
+                            <div class="bar" style="height: 60%"></div>
+                            <div class="bar" style="height: 80%"></div>
+                            <div class="bar" style="height: 45%"></div>
+                            <div class="bar" style="height: 90%"></div>
+                            <div class="bar" style="height: 70%"></div>
+                        </div>
+                    </div>
+
+                    <div class="risk-breakdown">
+                        <h4>Risk Breakdown</h4>
+                        <div class="risk-item">
+                            <span>Injury:</span>
+                            <div class="risk-bar">
+                                <div class="risk-fill yellow" style="width: 60%"></div>
+                            </div>
+                            <span>6/10 🟡</span>
+                        </div>
+                        <div class="risk-item">
+                            <span>Age:</span>
+                            <div class="risk-bar">
+                                <div class="risk-fill red" style="width: 80%"></div>
+                            </div>
+                            <span>8/10 🔴</span>
+                        </div>
+                        <div class="risk-item">
+                            <span>Contract:</span>
+                            <div class="risk-bar">
+                                <div class="risk-fill green" style="width: 40%"></div>
+                            </div>
+                            <span>4/10 🟢</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="salary-impact">
+                    <h4>Salary Impact</h4>
+                    <div class="salary-details">
+                        <span><strong>Before:</strong> $120M</span>
+                        <span><strong>After:</strong> $135M</span>
+                        <span><strong>Cap Space:</strong> $5M left</span>
+                    </div>
+                </div>
+
+                <div class="top-reasons">
+                    <h4>Top 5 Reasons</h4>
+                    <ul>
+                        <li class="positive">✓ Improves floor spacing (+2.5 3PA/game)</li>
+                        <li class="positive">✓ Younger roster (avg age 29→26)</li>
+                        <li class="warning">⚠ High injury risk (Tatum missed 15 games)</li>
+                        <li class="positive">✓ Better defensive rating (+3.2)</li>
+                        <li class="warning">⚠ Luxury tax increases by $8M</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>
