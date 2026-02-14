@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>NBA Trade Analyzer - AI-Powered Player Predictions</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='modal_styles.css') }}">
 </head>
 
 <body>
@@ -17,16 +18,16 @@
 
     <header class="main-header">
         <div class="logo">
-            <span class="logo-icon">🎯</span>
-            <span class="logo-text">YourBrand</span>
+            <span class="logo-icon">🏀</span>
+            <span class="logo-text">NBA Trade Analyzer</span>
         </div>
 
         <nav class="main-nav">
             <ul>
-                <li><a href="#">Energy Drinks</a></li>
-                <li><a href="#">Events</a></li>
-                <li><a href="#">Athletes</a></li>
-                <li><a href="#">Brand TV</a></li>
+                <li><a href="#trade-analyzer">Trade Analyzer</a></li>
+                <li><a href="#">Player Stats</a></li>
+                <li><a href="#">ML Model Info</a></li>
+                <li><a href="#">About</a></li>
             </ul>
         </nav>
 
@@ -38,10 +39,9 @@
 
     <section class="hero-section">
         <section class="hero-content">
-            <div class="hero-small-title">HOVERAir</div>
-            <h1 class="hero-main-title">The ultimate<br>wingman</h1>
-            <p class="hero-description">Introducing the HOVERAir X1 PRO and X1<br>PROMAX - the most advanced flying
-                action<br>cameras for your next adventure</p>
+            <div class="hero-small-title">AI-Powered Analytics</div>
+            <h1 class="hero-main-title">Predict Player<br>Performance</h1>
+            <p class="hero-description">Advanced ML model using 54 features from 5 seasons<br>of NBA data to predict next season stats<br>with industry-leading accuracy</p>
         </section>
 
         <div class="scroll-indicator">
@@ -80,14 +80,9 @@
                 <div class="players-column outgoing">
                     <h3>Outgoing Players</h3>
                     <div class="players-list" id="outgoing-players">
-                        <div class="player-card">
-                            <div class="player-name">LeBron James</div>
-                            <div class="player-stat">PPG: 28.5</div>
-                            <div class="player-stat">Age: 39</div>
-                            <button class="remove-btn" onclick="removePlayer(this)">Remove</button>
-                        </div>
+                        <!-- Players will be added here dynamically -->
                     </div>
-                    <button class="add-player-btn" onclick="addPlayer('outgoing')">+ Add Player</button>
+                    <button class="add-player-btn" onclick="showPlayerSelector('outgoing')">+ Add Player</button>
                 </div>
 
                 <div class="vs-divider">VS</div>
@@ -95,14 +90,9 @@
                 <div class="players-column incoming">
                     <h3>Incoming Players</h3>
                     <div class="players-list" id="incoming-players">
-                        <div class="player-card">
-                            <div class="player-name">Jayson Tatum</div>
-                            <div class="player-stat">PPG: 27.2</div>
-                            <div class="player-stat">Age: 26</div>
-                            <button class="remove-btn" onclick="removePlayer(this)">Remove</button>
-                        </div>
+                        <!-- Players will be added here dynamically -->
                     </div>
-                    <button class="add-player-btn" onclick="addPlayer('incoming')">+ Add Player</button>
+                    <button class="add-player-btn" onclick="showPlayerSelector('incoming')">+ Add Player</button>
                 </div>
             </div>
 
@@ -110,8 +100,8 @@
 
             <div class="results-dashboard" id="results-dashboard" style="display: none;">
                 <div class="success-score">
-                    <div class="score-label">Trade Success Score</div>
-                    <div class="score-value" id="score-value">74.2</div>
+                    <div class="score-label">ML-Predicted Trade Score</div>
+                    <div class="score-value" id="score-value">--</div>
                     <div class="score-max">/ 100</div>
                 </div>
 
@@ -174,7 +164,39 @@
                 </div>
             </div>
         </div>
+        </div>
     </section>
+
+    <!-- Player Selection Modal -->
+    <div id="player-selector-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Player</h2>
+                <button class="modal-close" onclick="hidePlayerSelector()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="selector-group">
+                    <label for="team-selector">1. Select Team:</label>
+                    <select id="team-selector" class="selector-dropdown" onchange="onTeamSelected()">
+                        <option value="">Choose a team...</option>
+                        <!-- Teams populated dynamically -->
+                    </select>
+                </div>
+                
+                <div class="selector-group">
+                    <label for="player-selector">2. Select Player:</label>
+                    <select id="player-selector" class="selector-dropdown" onchange="onPlayerSelected()" disabled>
+                        <option value="">Select team first...</option>
+                        <!-- Players populated based on team -->
+                    </select>
+                </div>
+               
+                <button id="confirm-player-btn" class="confirm-btn" onclick="confirmPlayerSelection()" disabled>
+                    Confirm Selection
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

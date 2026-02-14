@@ -1,30 +1,41 @@
-# Virtual Environment
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
 venv/
 env/
+ENV/
+.venv
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# Environment variables
 .env
+.env.local
 
-# Python compilation
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
-# Large model files (>50MB)
-*.h5
-*.onnx
-*.pt
-*.safetensors
-
-# Documentation (commented for now)
-*.md
-
-# OS generated files
+# OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Uncomment if models get too large in future:
-# models/*.pkl
-# !models/player_xgb_v1.pkl  # Allow small XGBoost model
+# Project specific
+models/*.pkl
+models/*.txt
+models/*.json
+data/raw/*.csv
+data/processed/*.csv
+
+# Temporary files
+*.log
+*.tmp

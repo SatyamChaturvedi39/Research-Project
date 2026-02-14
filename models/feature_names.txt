@@ -1,9 +1,0 @@
-age
-games_played
-minutes_per_game
-points_per_game
-rebounds_per_game
-assists_per_game
-points_per_minute
-assist_rate
-rebound_rate
