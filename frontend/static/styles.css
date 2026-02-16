@@ -638,4 +638,75 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}/* Additions for enhanced player card */
+.player-card {
+    padding: 15px;
+    background: linear-gradient(145deg, #1e1e24, #25252d);
+}
+
+.player-header {
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+}
+
+.player-team-age {
+    font-size: 0.9em;
+    color: #888;
+    margin-top: 4px;
+}
+
+.prediction-section {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.main-pred {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.main-pred .pred-value {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: #4CAF50;
+    text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.secondary-preds {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 0.85em;
+}
+
+.pred-item {
+    display: flex;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.pred-item .label {
+    color: #aaa;
+}
+
+.pred-item .value {
+    font-weight: 600;
+    color: #fff;
+}
+
+.history-stat {
+    font-size: 0.8em;
+    color: #666;
+    text-align: center;
+    margin-top: 8px;
+    font-style: italic;
 }
