@@ -175,7 +175,14 @@ async function addPlayerToTrade(playerName, type) {
             <div class="player-stat"><strong>${prediction.team}</strong> | Age: ${prediction.current_age}</div>
             <div class="player-stat">Last Season: ${prediction.current_stats.ppg} PPG</div>
             <div class="player-stat prediction-stat"><strong>Predicted:</strong> ${prediction.predictions.ppg} PPG</div>
-            <div class="player-stat-small">RPG: ${prediction.predictions.rpg} | APG: ${prediction.predictions.apg}</div>
+            <div class="player-stat-small">
+                <span>RPG: ${prediction.predictions.rpg}</span> | 
+                <span>APG: ${prediction.predictions.apg}</span>
+            </div>
+            <div class="player-stat-small">
+                <span>MPG: ${prediction.predictions.mpg}</span> | 
+                <span>TS%: ${(prediction.predictions.ts_pct * 100).toFixed(1)}%</span>
+            </div>
             <button class="remove-btn" onclick="removePlayer(this)">Remove</button>
         `;
 
