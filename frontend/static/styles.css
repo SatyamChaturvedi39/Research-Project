@@ -276,6 +276,8 @@ body {
 }
 
 .team-selector {
+    padding-left: 175px;
+    padding-right: 175px;
     display: flex;
     align-items: center;
     gap: 15px;
@@ -638,7 +640,9 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
-}/* Additions for enhanced player card */
+}
+
+/* Additions for enhanced player card */
 .player-card {
     padding: 15px;
     background: linear-gradient(145deg, #1e1e24, #25252d);

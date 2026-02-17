@@ -70,32 +70,21 @@ for player_name, player_df in player_groups:
     # Build stats array (one entry per season)
     stats_array = []
     for _, row in player_df.iterrows():
-        season_stats = {
-            "season": row['season'],
-            "team": row['team'],
-            "age": int(row['age']) if pd.notna(row['age']) else 0,
-            "games_played": int(row['games_played']) if pd.notna(row['games_played']) else 0,
-            
-            # Per-game stats
-            "minutes_per_game": float(row['minutes_per_game']) if pd.notna(row['minutes_per_game']) else 0.0,
-            "points_per_game": float(row['points_per_game']) if pd.notna(row['points_per_game']) else 0.0,
-            "rebounds_per_game": float(row['rebounds_per_game']) if pd.notna(row['rebounds_per_game']) else 0.0,
-            "assists_per_game": float(row['assists_per_game']) if pd.notna(row['assists_per_game']) else 0.0,
-            "steals_per_game": float(row['steals_per_game']) if pd.notna(row['steals_per_game']) else 0.0,
-            "blocks_per_game": float(row['blocks_per_game']) if pd.notna(row['blocks_per_game']) else 0.0,
-            "turnovers_per_game": float(row['turnovers_per_game']) if pd.notna(row['turnovers_per_game']) else 0.0,
-            
-            # Shooting percentages
-            "field_goal_pct": float(row['field_goal_pct']) if pd.notna(row['field_goal_pct']) else 0.0,
-            "free_throw_pct": float(row['free_throw_pct']) if pd.notna(row['free_throw_pct']) else 0.0,
-            "true_shooting_pct": float(row['true_shooting_pct']) if pd.notna(row['true_shooting_pct']) else 0.0,
-            
-            # Advanced stats
-            "points_per_minute": float(row['points_per_minute']) if pd.notna(row['points_per_minute']) else 0.0,
-            "usage_rate": float(row['usage_rate']) if pd.notna(row['usage_rate']) else 0.0,
-            "assist_rate": float(row['assist_rate']) if pd.notna(row['assist_rate']) else 0.0,
-            "rebound_rate": float(row['rebound_rate']) if pd.notna(row['rebound_rate']) else 0.0,
-        }
+        # Convert row to dictionary and handle NaN values
+        # We want ALL columns (including lags/trends) to be available for the model
+        season_stats = {}
+        for col, val in row.items():
+            if pd.notna(val):
+                # Convert numpy/pandas types to native Python types for MongoDB
+                if isinstance(val, (int, float, bool, str)):
+                    season_stats[col] = val
+                else:
+                    # Handle numpy types (e.g., int64, float64)
+                    try:
+                        season_stats[col] = val.item()
+                    except:
+                        season_stats[col] = str(val)
+        
         stats_array.append(season_stats)
     
     # Build document

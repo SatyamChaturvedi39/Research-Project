@@ -343,10 +343,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
         // Populate team selector
         const teamSelect = document.getElementById('team-selector');
+        teamSelect.innerHTML = '<option value="">Select a team...</option>'; // Clear existing
         allTeams.forEach(team => {
             const option = document.createElement('option');
-            option.value = team;
-            option.textContent = team;
+            option.value = team.code;
+            option.textContent = team.name;
             teamSelect.appendChild(option);
         });
 

@@ -11,6 +11,7 @@ import json
 import numpy as np
 import pandas as pd
 from datetime import datetime
+from pymongo import MongoClient
 
 # Load environment variables
 load_dotenv()
@@ -29,6 +30,55 @@ MONGODB_URI = os.getenv('MONGODB_URI')
 DATABASE_NAME = os.getenv('DATABASE_NAME', 'nba_db')
 COLLECTION_NAME = os.getenv('COLLECTION_NAME', 'players')
 FLASK_PORT = int(os.getenv('FLASK_PORT', 5000))
+
+# ============================================================================
+# Database Connection & Data Loading
+# ============================================================================
+
+def load_data_from_db():
+    """
+    Load player data from MongoDB and flatten it into a DataFrame
+    Compatible with the ML model's expected format.
+    """
+    print(f"Connecting to MongoDB at {DATABASE_NAME}...")
+    try:
+        if not MONGODB_URI:
+            raise ValueError("MONGODB_URI not set")
+            
+        client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+        db = client[DATABASE_NAME]
+        collection = db[COLLECTION_NAME]
+        
+        # Check if empty
+        if collection.count_documents({}) == 0:
+            print("⚠ MongoDB is empty. Falling back to CSV.")
+            return pd.read_csv('data/processed/player_features_v2_temporal.csv')
+            
+        print("Fetching documents from MongoDB...")
+        cursor = collection.find({})
+        
+        flattened_rows = []
+        for doc in cursor:
+            player_name = doc.get('player_name', 'Unknown')
+            # The 'stats' array contains the historical rows (features)
+            stats = doc.get('stats', [])
+            for s in stats:
+                s['player_name'] = player_name
+                flattened_rows.append(s)
+        
+        df = pd.DataFrame(flattened_rows)
+        print(f"✓ Successfully loaded {len(df)} rows from MongoDB")
+        client.close()
+        return df
+        
+    except Exception as e:
+        print(f"⚠ Database connection failed: {e}")
+        print("Falling back to local CSV file...")
+        try:
+            return pd.read_csv('data/processed/player_features_v2_temporal.csv')
+        except:
+            print("❌ Critical: Could not load data from DB or CSV")
+            return None
 
 # ============================================================================
 # Load ML Model and Artifacts
@@ -59,21 +109,18 @@ try:
     # Load model metadata
     with open('models/model_metadata_v2.json', 'r') as f:
         model_metadata = json.load(f)
-    print(f"✓ Loaded model metadata (version {model_metadata['model_version']})")
+    print(f"✓ Loaded model metadata (version {model_metadata.get('model_version')})")
     
-    # Load player data
-    players_df = pd.read_csv('data/processed/player_features_v2_temporal.csv')
-    print(f"✓ Loaded {len(players_df)} player-season records")
+    # LOAD DATA FROM MONGODB INSTEAD OF CSV
+    players_df = load_data_from_db()
     
-    # Validate data loaded correctly
-    if len(players_df) == 0:
-        raise ValueError("Player dataset is empty!")
-    
-    # Get latest season dynamically
-    latest_season = players_df['season'].max()
-    print(f"✓ Latest season detected: {latest_season}")
-    
-    model_loaded = True
+    if players_df is not None:
+        latest_season = players_df['season'].max()
+        print(f"✓ Loaded {len(players_df)} player-season records")
+        print(f"✓ Latest season detected: {latest_season}")
+        model_loaded = True
+    else:
+        model_loaded = False
     
 except Exception as e:
     print(f"❌ Error loading model: {str(e)}")
@@ -110,15 +157,18 @@ def calculate_current_age(dataset_age, dataset_season):
     """
     current_year = datetime.now().year
     
-    # Parse season year (e.g., '24-25' -> 2024)
-    season_start_year = int(dataset_season.split('-')[0])
+    # Parse season year (e.g., '24-25' -> 2024, '2024-25' -> 2024)
+    season_parts = dataset_season.split('-')
+    season_start_year_str = season_parts[0]
+    season_start_year = int(season_start_year_str)
     
-    # Handle century (assume 20xx for values < 50, 19xx for >= 50)
-    if season_start_year < 50:
-        season_start_year += 2000
-    else:
-        season_start_year += 1900
-    
+    # Handle 2-digit years if necessary
+    if len(season_start_year_str) == 2:
+        if season_start_year < 50:
+            season_start_year += 2000
+        else:
+            season_start_year += 1900
+            
     years_passed = current_year - season_start_year
     return int(dataset_age) + years_passed
 
@@ -156,8 +206,24 @@ def get_teams():
     
     teams = sorted(season_data['team'].unique().tolist())
     
+    # NBA Team Mapping (Abbreviation -> Full Name)
+    team_map = {
+        'ATL': 'Atlanta Hawks', 'BOS': 'Boston Celtics', 'BKN': 'Brooklyn Nets', 'BRK': 'Brooklyn Nets',
+        'CHA': 'Charlotte Hornets', 'CHO': 'Charlotte Hornets', 'CHI': 'Chicago Bulls', 'CLE': 'Cleveland Cavaliers',
+        'DAL': 'Dallas Mavericks', 'DEN': 'Denver Nuggets', 'DET': 'Detroit Pistons',
+        'GSW': 'Golden State Warriors', 'HOU': 'Houston Rockets', 'IND': 'Indiana Pacers',
+        'LAC': 'Los Angeles Clippers', 'LAL': 'Los Angeles Lakers', 'MEM': 'Memphis Grizzlies',
+        'MIA': 'Miami Heat', 'MIL': 'Milwaukee Bucks', 'MIN': 'Minnesota Timberwolves',
+        'NOP': 'New Orleans Pelicans', 'NYK': 'New York Knicks', 'OKC': 'Oklahoma City Thunder',
+        'ORL': 'Orlando Magic', 'PHI': 'Philadelphia 76ers', 'PHX': 'Phoenix Suns', 'PHO': 'Phoenix Suns',
+        'POR': 'Portland Trail Blazers', 'SAC': 'Sacramento Kings', 'SAS': 'San Antonio Spurs',
+        'TOR': 'Toronto Raptors', 'UTA': 'Utah Jazz', 'WAS': 'Washington Wizards'
+    }
+    
+    formatted_teams = [{'code': t, 'name': team_map.get(t, t)} for t in teams]
+    
     return jsonify({
-        'teams': teams,
+        'teams': formatted_teams,
         'count': len(teams),
         'season': latest_season
     })
