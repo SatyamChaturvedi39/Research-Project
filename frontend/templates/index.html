@@ -55,32 +55,42 @@
             <h2 class="section-heading">NBA Trade Analyzer</h2>
 
             <div class="teams-header">
-                <div class="team-selector">
-                    <label>Team A:</label>
+                <div class="team-selector-container">
+                    <label for="team-select-outgoing">Team A (Outgoing)</label>
+                    <select id="team-select-outgoing" class="main-team-select" onchange="onMainTeamChange('outgoing')">
+                        <option value="">Select Team...</option>
+                    </select>
                 </div>
+                
                 <div class="trade-arrow">↔ TRADE ↔</div>
-                <div class="team-selector">
-                    <label>Team B:</label>
+                
+                <div class="team-selector-container">
+                    <label for="team-select-incoming">Team B (Incoming)</label>
+                    <select id="team-select-incoming" class="main-team-select" onchange="onMainTeamChange('incoming')">
+                        <option value="">Select Team...</option>
+                    </select>
                 </div>
             </div>
 
             <div class="players-section">
                 <div class="players-column outgoing">
-                    <h3>Outgoing Players</h3>
+                    <h3>Assets from Team A</h3>
                     <div class="players-list" id="outgoing-players">
                         <!-- Players will be added here dynamically -->
+                        <div class="empty-state">Select a team above to start</div>
                     </div>
-                    <button class="add-player-btn" onclick="showPlayerSelector('outgoing')">+ Add Player</button>
+                    <button id="btn-add-outgoing" class="add-player-btn" onclick="openPlayerModal('outgoing')" disabled>+ Add Player</button>
                 </div>
 
                 <div class="vs-divider">VS</div>
 
                 <div class="players-column incoming">
-                    <h3>Incoming Players</h3>
+                    <h3>Assets from Team B</h3>
                     <div class="players-list" id="incoming-players">
-                        <!-- Players will be added here dynamically -->
+                         <!-- Players will be added here dynamically -->
+                         <div class="empty-state">Select a team above to start</div>
                     </div>
-                    <button class="add-player-btn" onclick="showPlayerSelector('incoming')">+ Add Player</button>
+                    <button id="btn-add-incoming" class="add-player-btn" onclick="openPlayerModal('incoming')" disabled>+ Add Player</button>
                 </div>
             </div>
 
@@ -163,19 +173,12 @@
                 <button class="modal-close" onclick="hidePlayerSelector()">✕</button>
             </div>
             <div class="modal-body">
-                <div class="selector-group">
-                    <label for="team-selector">1. Select Team:</label>
-                    <select id="team-selector" class="selector-dropdown" onchange="onTeamSelected()">
-                        <option value="">Choose a team...</option>
-                        <!-- Teams populated dynamically -->
-                    </select>
-                </div>
+                <!-- Team selection removed, implied by side -->
                 
                 <div class="selector-group">
-                    <label for="player-selector">2. Select Player:</label>
-                    <select id="player-selector" class="selector-dropdown" onchange="onPlayerSelected()" disabled>
-                        <option value="">Select team first...</option>
-                        <!-- Players populated based on team -->
+                    <label for="player-selector">Select Player to Trade:</label>
+                    <select id="player-selector" class="selector-dropdown" onchange="onPlayerSelected()">
+                        <option value="">Loading players...</option>
                     </select>
                 </div>
                

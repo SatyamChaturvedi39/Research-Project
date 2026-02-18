@@ -50,40 +50,74 @@ function showSuccess(message) {
 // Player Selection Modal
 // ============================================================================
 
-function showPlayerSelector(type) {
+// ============================================================================
+// Team & Player Selection Logic (Two-Team Constraint)
+// ============================================================================
+
+function onMainTeamChange(type) {
+    const isOutgoing = type === 'outgoing';
+    const selectId = isOutgoing ? 'team-select-outgoing' : 'team-select-incoming';
+    const otherSelectId = isOutgoing ? 'team-select-incoming' : 'team-select-outgoing';
+    const listId = isOutgoing ? 'outgoing-players' : 'incoming-players';
+    const btnId = isOutgoing ? 'btn-add-outgoing' : 'btn-add-incoming';
+
+    const selectedTeam = document.getElementById(selectId).value;
+    const otherSelect = document.getElementById(otherSelectId);
+
+    // 1. Clear existing players for this side
+    const list = document.getElementById(listId);
+    list.innerHTML = '';
+
+    // 2. Manage "Add Player" button state
+    const addBtn = document.getElementById(btnId);
+    if (selectedTeam) {
+        addBtn.disabled = false;
+        // Remove empty state message if strictly needed, or let addPlayer handle it
+    } else {
+        addBtn.disabled = true;
+        list.innerHTML = '<div class="empty-state">Select a team above to start</div>';
+    }
+
+    // 3. Prevent selecting same team on both sides
+    // value constraint: Disable this team in the OTHER dropdown
+    Array.from(otherSelect.options).forEach(option => {
+        if (option.value === selectedTeam && selectedTeam !== "") {
+            option.disabled = true;
+        } else {
+            option.disabled = false;
+        }
+    });
+}
+
+function openPlayerModal(type) {
     const modal = document.getElementById('player-selector-modal');
     modal.setAttribute('data-selection-type', type);
-    modal.style.display = 'flex';
 
-    // Reset selection
-    document.getElementById('team-selector').value = '';
-    document.getElementById('player-selector').innerHTML = '<option value="">Select team first...</option>';
-    document.getElementById('player-selector').disabled = true;
-    document.getElementById('confirm-player-btn').disabled = true;
-}
+    // 1. Identify which team is selected for this side
+    const selectId = type === 'outgoing' ? 'team-select-outgoing' : 'team-select-incoming';
+    const teamId = document.getElementById(selectId).value;
 
-function hidePlayerSelector() {
-    document.getElementById('player-selector-modal').style.display = 'none';
-}
-
-async function onTeamSelected() {
-    const teamSelect = document.getElementById('team-selector');
-    const playerSelect = document.getElementById('player-selector');
-    const selectedTeam = teamSelect.value;
-
-    if (!selectedTeam) {
-        playerSelect.innerHTML = '<option value="">Select team first...</option>';
-        playerSelect.disabled = true;
+    if (!teamId) {
+        showError("Please select a team for this side first.");
         return;
     }
 
-    // Show loading
+    // 2. Show Modal
+    modal.style.display = 'flex';
+
+    // 3. Load Players for this team immediately
+    const playerSelect = document.getElementById('player-selector');
     playerSelect.innerHTML = '<option value="">Loading players...</option>';
-    playerSelect.disabled = true;
+    document.getElementById('confirm-player-btn').disabled = true;
+
+    loadPlayersForModal(teamId);
+}
+
+async function loadPlayersForModal(teamId) {
+    const playerSelect = document.getElementById('player-selector');
 
     try {
-        // Fetch players for selected team
-        const response = await fetch(`/api/players?team=${encodeURIComponent(selectedTeam)}`);
+        const response = await fetch(`/api/players?team=${encodeURIComponent(teamId)}`);
         const data = await response.json();
 
         if (data.players.length === 0) {
@@ -91,22 +125,23 @@ async function onTeamSelected() {
             return;
         }
 
-        // Populate player dropdown
         playerSelect.innerHTML = '<option value="">Select a player...</option>';
         data.players.forEach(player => {
             const option = document.createElement('option');
             option.value = player.player_name;
+            // Show PPG in dropdown for better UX
             option.textContent = `${player.player_name} (${player.points_per_game.toFixed(1)} PPG)`;
             playerSelect.appendChild(option);
         });
 
-        playerSelect.disabled = false;
-
     } catch (error) {
         console.error('Failed to load players:', error);
-        showError('Failed to load players for ' + selectedTeam);
         playerSelect.innerHTML = '<option value="">Error loading players</option>';
     }
+}
+
+function hidePlayerSelector() {
+    document.getElementById('player-selector-modal').style.display = 'none';
 }
 
 function onPlayerSelected() {
@@ -133,8 +168,21 @@ async function confirmPlayerSelection() {
 // ============================================================================
 
 async function addPlayerToTrade(playerName, type) {
+    // 1. Check for duplicates
+    const existingCard = document.querySelector(`.player-card[data-player-name="${playerName}"]`);
+    if (existingCard) {
+        showError(`${playerName} is already in the trade!`);
+        return;
+    }
+
     const listId = type === 'outgoing' ? 'outgoing-players' : 'incoming-players';
     const list = document.getElementById(listId);
+
+    // Remove empty state if it exists
+    const emptyState = list.querySelector('.empty-state');
+    if (emptyState) {
+        emptyState.remove();
+    }
 
     // Show loading indicator
     const loadingCard = document.createElement('div');
@@ -341,18 +389,26 @@ window.addEventListener('DOMContentLoaded', async () => {
         const teamsData = await teamsRes.json();
         allTeams = teamsData.teams;
 
-        // Populate team selector
-        const teamSelect = document.getElementById('team-selector');
-        teamSelect.innerHTML = '<option value="">Select a team...</option>'; // Clear existing
-        allTeams.forEach(team => {
-            const option = document.createElement('option');
-            option.value = team.code;
-            option.textContent = team.name;
-            teamSelect.appendChild(option);
-        });
+        // Populate BOTH team selectors
+        const outgoingSelect = document.getElementById('team-select-outgoing');
+        const incomingSelect = document.getElementById('team-select-incoming');
+
+        // Helper to populate a select element
+        const populateSelect = (selectElement) => {
+            selectElement.innerHTML = '<option value="">Select Team...</option>';
+            allTeams.forEach(team => {
+                const option = document.createElement('option');
+                option.value = team.code;
+                option.textContent = team.name;
+                selectElement.appendChild(option);
+            });
+        };
+
+        populateSelect(outgoingSelect);
+        populateSelect(incomingSelect);
 
         console.log(`Loaded ${allTeams.length} teams`);
-        showSuccess('System ready! Select teams to compare players.');
+        showSuccess('System ready! Select Team A and Team B to start.');
 
     } catch (error) {
         console.error('Failed to load backend data:', error);
