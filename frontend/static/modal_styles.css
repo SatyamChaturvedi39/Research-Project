@@ -142,3 +142,47 @@
     color: #6b7280;
     font-style: italic;
 }
+
+/* ── Modal Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+    .modal {
+        align-items: flex-end;
+    }
+
+    .modal-content {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        padding: 20px;
+        position: sticky;
+        top: 0;
+        background: #1f2937;
+        z-index: 1;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .selector-dropdown {
+        font-size: 16px;
+        /* prevents iOS zoom on focus */
+        padding: 14px 16px;
+    }
+
+    .confirm-btn {
+        padding: 16px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 479px) {
+    .modal-header h2 {
+        font-size: 20px;
+    }
+}

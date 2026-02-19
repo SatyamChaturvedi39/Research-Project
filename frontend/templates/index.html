@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NBA Trade Analyzer - AI-powered player predictions with 54-feature ML model. Analyze trades across all 30 NBA teams.">
     <title>NBA Trade Analyzer - AI-Powered Player Predictions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='modal_styles.css') }}">
 </head>
@@ -32,10 +36,23 @@
         </nav>
 
         <div class="header-icons">
-            <button class="icon-btn">👤</button>
-            <button class="icon-btn">🔍</button>
+            <button class="icon-btn" aria-label="Search">🔍</button>
+            <button class="icon-btn hamburger-btn" id="hamburger-btn" aria-label="Open menu" onclick="toggleMobileNav()">☰</button>
         </div>
     </header>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay" onclick="toggleMobileNav()">
+        <nav class="mobile-nav" onclick="event.stopPropagation()">
+            <button class="mobile-nav-close" onclick="toggleMobileNav()">✕</button>
+            <ul>
+                <li><a href="#trade-analyzer" onclick="toggleMobileNav()">Trade Analyzer</a></li>
+                <li><a href="#" onclick="toggleMobileNav()">Player Stats</a></li>
+                <li><a href="#" onclick="toggleMobileNav()">ML Model Info</a></li>
+                <li><a href="#" onclick="toggleMobileNav()">About</a></li>
+            </ul>
+        </nav>
+    </div>
 
     <section class="hero-section">
         <section class="hero-content">

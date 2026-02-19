@@ -7,6 +7,23 @@ let allTeams = [];
 let currentPlayers = {};
 
 // ============================================================================
+// Mobile Navigation
+// ============================================================================
+
+function toggleMobileNav() {
+    const overlay = document.getElementById('mobile-nav-overlay');
+    if (overlay) overlay.classList.toggle('active');
+}
+
+// Close mobile nav on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const overlay = document.getElementById('mobile-nav-overlay');
+        if (overlay) overlay.classList.remove('active');
+    }
+});
+
+// ============================================================================
 // Error Notification System
 // ============================================================================
 
