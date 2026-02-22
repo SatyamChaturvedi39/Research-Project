@@ -19,12 +19,18 @@
     --color-text: #ffffff;
     --color-text-muted: rgba(255, 255, 255, 0.7);
     --color-border: rgba(255, 255, 255, 0.1);
+    --color-shap-pos: #00d4ff;
+    /* cyan  — positive SHAP */
+    --color-shap-neg: #ff4466;
+    /* red   — negative SHAP */
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+
 
 html {
     scroll-behavior: smooth;
@@ -1330,5 +1336,518 @@ body {
     .success-content {
         min-width: unset;
         width: 100%;
+    }
+}
+
+
+/* ========================================================================
+   SHAP PLAYER CARD SYSTEM
+   ======================================================================== */
+
+/* ── Redesigned Player Card Header ──────────────────────────────────────── */
+.pc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.pc-name {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.3;
+    flex: 1;
+}
+
+.pc-meta {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 14px;
+    letter-spacing: 0.3px;
+}
+
+/* ── Stats Grid ──────────────────────────────────────────────────────────── */
+.pc-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.pc-stat-block {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 10px 6px;
+    text-align: center;
+}
+
+.pc-stat-block.highlight {
+    background: rgba(0, 212, 255, 0.08);
+    border-color: rgba(0, 212, 255, 0.25);
+}
+
+.pc-stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.pc-stat-block.highlight .pc-stat-value {
+    color: var(--color-accent-cyan);
+}
+
+.pc-stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.45);
+    font-weight: 600;
+}
+
+/* ── Confidence Range Text ───────────────────────────────────────────────── */
+.pc-range {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 12px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    border-left: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.pc-range strong {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+
+/* ── Confidence Badges ───────────────────────────────────────────────────── */
+.conf-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.conf-high {
+    background: rgba(0, 255, 135, 0.15);
+    color: var(--color-accent-green);
+    border: 1px solid rgba(0, 255, 135, 0.3);
+}
+
+.conf-medium {
+    background: rgba(255, 215, 0, 0.12);
+    color: var(--color-accent-gold);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.conf-low {
+    background: rgba(255, 68, 102, 0.12);
+    color: #ff7090;
+    border: 1px solid rgba(255, 68, 102, 0.3);
+}
+
+
+/* ── SHAP Section ─────────────────────────────────────────────────────────── */
+.shap-section {
+    margin: 12px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.shap-toggle {
+    width: 100%;
+    background: rgba(0, 212, 255, 0.05);
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-family);
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+    text-align: left;
+}
+
+.shap-toggle:hover {
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--color-accent-cyan);
+}
+
+.shap-toggle-icon {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+    color: var(--color-accent-cyan);
+}
+
+.shap-body {
+    padding: 14px;
+    background: rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ── SHAP waterfall header ────────────────────────────────────────────────── */
+.shap-header-row {
+    margin-bottom: 4px;
+}
+
+.shap-header-text {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+    font-style: normal;
+}
+
+.shap-header-text em {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── SHAP row (label + bar + value) ─────────────────────────────────────── */
+.shap-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 60px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2px;
+}
+
+.shap-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.75);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+}
+
+.shap-bar-track {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.shap-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shap-bar-pos {
+    background: linear-gradient(90deg, rgba(0, 212, 255, 0.5), var(--color-shap-pos));
+}
+
+.shap-bar-neg {
+    background: linear-gradient(90deg, rgba(255, 68, 102, 0.5), var(--color-shap-neg));
+}
+
+.shap-value {
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.shap-value.pos {
+    color: var(--color-shap-pos);
+}
+
+.shap-value.neg {
+    color: var(--color-shap-neg);
+}
+
+/* ── SHAP reason text ────────────────────────────────────────────────────── */
+.shap-reason {
+    font-size: 11.5px;
+    color: rgba(255, 255, 255, 0.45);
+    line-height: 1.5;
+    padding: 0 0 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    margin-bottom: 4px;
+}
+
+.shap-reason:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* ── Secondary targets note ──────────────────────────────────────────────── */
+.shap-secondary {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: 2px;
+}
+
+
+/* ── Responsive adjustments for SHAP card ───────────────────────────────── */
+@media (max-width: 767px) {
+    .pc-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .shap-row {
+        grid-template-columns: 120px 1fr 50px;
+        gap: 7px;
+    }
+
+    .shap-label {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 479px) {
+    .pc-stat-value {
+        font-size: 16px;
+    }
+
+    .shap-row {
+        grid-template-columns: 100px 1fr 46px;
+        gap: 5px;
+    }
+}
+
+
+/* ========================================================================
+   SCORE METER + TRADE EXPLANATION
+   ======================================================================== */
+
+.score-meter-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    padding: 36px 40px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 24px;
+}
+
+/* Left: big number */
+.score-display-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.score-eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.score-value {
+    font-size: clamp(60px, 8vw, 96px);
+    font-weight: 900;
+    line-height: 1;
+    color: var(--color-accent-cyan);
+    transition: color 0.6s ease;
+    font-variant-numeric: tabular-nums;
+}
+
+.score-out-of {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 500;
+}
+
+/* Right: Score Guide */
+.score-guide-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex: 1;
+    max-width: 320px;
+}
+
+.guide-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 2px;
+}
+
+.guide-scale {
+    display: flex;
+    width: 100%;
+    gap: 4px;
+    height: 48px;
+}
+
+.guide-zone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.guide-zone.active {
+    opacity: 1;
+    transform: scale(1.05);
+    box-shadow: 0 0 12px currentColor;
+    z-index: 2;
+}
+
+.gz-range {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.gz-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    margin-top: 2px;
+}
+
+.guide-note {
+    font-size: 11.5px;
+    color: rgba(255, 255, 255, 0.35);
+    margin-top: 4px;
+    text-align: right;
+}
+
+.guide-note strong {
+    color: var(--color-accent-green);
+}
+
+/* Trade Explanation Card */
+.trade-explanation-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.te-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(0, 212, 255, 0.04);
+}
+
+.te-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.te-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.trade-explanation {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.explanation-sentence {
+    font-size: 15px;
+    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.65);
+    padding-left: 14px;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+    margin: 0;
+}
+
+.explanation-sentence.lead {
+    font-size: 17px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    border-left-color: var(--color-accent-cyan);
+    border-left-width: 3px;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+    .score-meter-row {
+        flex-direction: column;
+        align-items: center;
+        padding: 24px 20px;
+        gap: 22px;
+    }
+
+    .score-display-block {
+        align-items: center;
+    }
+
+    .score-meter-block {
+        max-width: 260px;
+        width: 100%;
+    }
+
+    .meter-verdict {
+        font-size: 16px;
+    }
+
+    .trade-explanation {
+        padding: 18px 16px;
+        gap: 12px;
+    }
+
+    .explanation-sentence {
+        font-size: 14px;
+    }
+
+    .explanation-sentence.lead {
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 479px) {
+    .score-meter-row {
+        padding: 18px 14px;
+    }
+
+    .score-meter-block {
+        max-width: 220px;
+    }
+
+    .te-header {
+        padding: 12px 14px;
+    }
+
+    .trade-explanation {
+        padding: 14px 12px;
+        gap: 10px;
     }
 }

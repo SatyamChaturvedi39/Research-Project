@@ -114,73 +114,60 @@
             <button class="analyze-btn" onclick="analyzeTrade()">Analyze Trade</button>
 
             <div class="results-dashboard" id="results-dashboard" style="display: none;">
-                <div class="success-score">
-                    <div class="score-label">ML-Predicted Trade Score</div>
-                    <div class="score-value" id="score-value">--</div>
-                    <div class="score-max">/ 100</div>
-                </div>
 
-                <div class="results-grid">
-                    <div class="chart-container">
-                        <h4>ΔWins Chart</h4>
-                        <div class="chart-placeholder">
-                            <div class="bar" style="height: 60%"></div>
-                            <div class="bar" style="height: 80%"></div>
-                            <div class="bar" style="height: 45%"></div>
-                            <div class="bar" style="height: 90%"></div>
-                            <div class="bar" style="height: 70%"></div>
-                        </div>
+                <!-- Score + Meter Row -->
+                <div class="score-meter-row">
+
+                    <!-- LEFT: big score number -->
+                    <div class="score-display-block">
+                        <div class="score-eyebrow">ML-Predicted Trade Score</div>
+                        <div class="score-value" id="score-value">--</div>
+                        <div class="score-out-of">/ 100</div>
                     </div>
 
-                    <div class="risk-breakdown">
-                        <h4>Risk Breakdown</h4>
-                        <div class="risk-item">
-                            <span>Injury:</span>
-                            <div class="risk-bar">
-                                <div class="risk-fill yellow" style="width: 60%"></div>
+                    <!-- RIGHT: Score Guide Component -->
+                    <div class="score-guide-block">
+                        <div class="guide-title">Score Meaning</div>
+                        <div class="guide-scale">
+                            <div class="guide-zone" style="background: rgba(255, 68, 102, 0.15); border-color: #ff4466; color: #ff4466;">
+                                <div class="gz-range">0-30</div>
+                                <div class="gz-label">Poor</div>
                             </div>
-                            <span>6/10 🟡</span>
-                        </div>
-                        <div class="risk-item">
-                            <span>Age:</span>
-                            <div class="risk-bar">
-                                <div class="risk-fill red" style="width: 80%"></div>
+                            <div class="guide-zone" style="background: rgba(255, 159, 67, 0.15); border-color: #ff9f43; color: #ff9f43;">
+                                <div class="gz-range">31-50</div>
+                                <div class="gz-label">Risky</div>
                             </div>
-                            <span>8/10 🔴</span>
-                        </div>
-                        <div class="risk-item">
-                            <span>Contract:</span>
-                            <div class="risk-bar">
-                                <div class="risk-fill green" style="width: 40%"></div>
+                            <div class="guide-zone" style="background: rgba(255, 215, 0, 0.15); border-color: #ffd700; color: #ffd700;">
+                                <div class="gz-range">51-70</div>
+                                <div class="gz-label">Good</div>
                             </div>
-                            <span>4/10 🟢</span>
+                            <div class="guide-zone" style="background: rgba(0, 255, 135, 0.15); border-color: #00ff87; color: #00ff87;">
+                                <div class="gz-range">71-100</div>
+                                <div class="gz-label">Great</div>
+                            </div>
                         </div>
+                        <div class="guide-note">Aim for a score of <strong>75 or above</strong> for a confident trade.</div>
                     </div>
                 </div>
 
-                <div class="salary-impact">
-                    <h4>Salary Impact</h4>
-                    <div class="salary-details">
-                        <span><strong>Before:</strong> $120M</span>
-                        <span><strong>After:</strong> $135M</span>
-                        <span><strong>Cap Space:</strong> $5M left</span>
+                <!-- ML Explanation -->
+                <div class="trade-explanation-card">
+                    <div class="te-header">
+                        <span class="te-icon">🤖</span>
+                        <span class="te-title">XGBoost Model Analysis</span>
+                    </div>
+                    <div class="trade-explanation" id="trade-explanation">
+                        <p class="explanation-sentence lead">Run the analysis to see the model's reasoning here.</p>
                     </div>
                 </div>
 
-                <div class="top-reasons">
-                    <h4>Top 5 Reasons</h4>
-                    <ul>
-                        <li class="positive">✓ Improves floor spacing (+2.5 3PA/game)</li>
-                        <li class="positive">✓ Younger roster (avg age 29→26)</li>
-                        <li class="warning">⚠ High injury risk (Tatum missed 15 games)</li>
-                        <li class="positive">✓ Better defensive rating (+3.2)</li>
-                        <li class="warning">⚠ Luxury tax increases by $8M</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        </div>
+
+        </div><!-- /trade-container -->
     </section>
+
+
+    <!-- Player Selection Modal -->
+
 
     <!-- Player Selection Modal -->
     <div id="player-selector-modal" class="modal">
