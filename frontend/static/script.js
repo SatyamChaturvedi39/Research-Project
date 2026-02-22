@@ -471,12 +471,12 @@ function updateScoreMeter(score) {
     // Reset categories
     zones.forEach(z => z.classList.remove('active'));
 
-    // Determine active zone index and color
+    // Determine active zone index and color — must match HTML zone ranges: 0-30/31-50/51-70/71-100
     let activeIdx = 0;
     let color = '';
-    if (score >= 75) { activeIdx = 3; color = '#00ff87'; }
-    else if (score >= 55) { activeIdx = 2; color = '#ffd700'; }
-    else if (score >= 35) { activeIdx = 1; color = '#ff9f43'; }
+    if (score >= 71) { activeIdx = 3; color = '#00ff87'; }
+    else if (score >= 51) { activeIdx = 2; color = '#ffd700'; }
+    else if (score >= 31) { activeIdx = 1; color = '#ff9f43'; }
     else { activeIdx = 0; color = '#ff4466'; }
 
     // Highlight active zone
@@ -493,12 +493,12 @@ function updateTradeAnalysis(score, d) {
 
     const sentences = [];
 
-    // ── Sentence 1: Overall verdict ──────────────────────────────────────
-    if (score >= 75) {
-        sentences.push(`The machine learning model strongly favors this trade. The projected output of the incoming players represents a clear upgrade across multiple statistical categories.`);
-    } else if (score >= 55) {
-        sentences.push(`This is a reasonably balanced trade. The model sees tangible upsides, but it comes with some tradeoffs worth weighing carefully.`);
-    } else if (score >= 35) {
+    // ── Sentence 1: Overall verdict — thresholds match HTML zones (71/51/31) ────
+    if (score >= 71) {
+        sentences.push(`The model rates this as a great trade. The incoming players project solidly across scoring, rebounding, and playmaking — a clear overall improvement.`);
+    } else if (score >= 51) {
+        sentences.push(`The model rates this as a good trade with some caveats. There are real upsides here, but the move isn't a slam dunk across every category.`);
+    } else if (score >= 31) {
         sentences.push(`This trade carries notable risk. The model's projections suggest the incoming package doesn't clearly improve the team's overall output.`);
     } else {
         sentences.push(`This trade looks highly unfavorable. Based on historical data patterns, the outgoing talent significantly outweighs the projected return.`);
@@ -526,13 +526,13 @@ function updateTradeAnalysis(score, d) {
         }
     }
 
-    // ── Sentence 4: Playmaking ────────────────────────────────────────────
-    if (d.outAPG > 0 || d.inAPG > 0) {
-        if (d.apgDelta > 1.5) {
-            sentences.push(`Playmaking sees a distinct improvement, signaling better projected ball distribution and team offensive flow.`);
-        } else if (d.apgDelta < -1.5) {
-            sentences.push(`Playmaking takes a step back. Losing this volume of assists could slow ball movement and stagnate half-court sets.`);
-        }
+    // ── Sentence 4: Playmaking — always outputs a sentence ─────────────────
+    if (d.apgDelta > 1.5) {
+        sentences.push(`Playmaking sees a distinct improvement, signaling better projected ball distribution and team offensive flow.`);
+    } else if (d.apgDelta < -1.5) {
+        sentences.push(`Playmaking takes a step back. Losing this volume of assists could slow ball movement and stagnate half-court sets.`);
+    } else {
+        sentences.push(`Assist production holds relatively steady in this deal, so ball movement and half-court offense shouldn't look very different.`);
     }
 
     // ── Sentence 5: Age/longevity ─────────────────────────────────────────

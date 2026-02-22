@@ -133,6 +133,7 @@ def _build_reason(feature, value, shap_val, target_key, current_age=None):
     # ── Plain-English templates (no jargon) ─────────────────────────────────────
     templates = {
         # Scoring history
+        'points_per_game': f"His current season scoring of {formatted_val} PPG is {'above' if shap_val > 0 else 'below'} the model's league-wide average baseline, which {'lifts' if shap_val > 0 else 'pulls down'} the projection. {'Scoring above average signals a strong offensive role.' if shap_val > 0 else 'As a lower-volume scorer, the model naturally projects him below the league mean.'}",
         'ppg_lag1':     f"He scored {formatted_val} points per game last season, which is the strongest recent signal — {'a good sign for continued output' if shap_val > 0 else 'suggesting a possible dip ahead'}.",
         'ppg_lag2':     f"Two seasons ago he put up {formatted_val} points per game — that historical scoring record {'helps' if shap_val > 0 else 'slightly lowers'} the projection.",
         'ppg_lag3':     f"His points tally from three seasons ago ({formatted_val} PPG) still anchors the long-term baseline {'upward' if shap_val > 0 else 'downward'}.",
@@ -143,8 +144,8 @@ def _build_reason(feature, value, shap_val, target_key, current_age=None):
         'ppg_trend_3yr': f"Looking at three years of scoring data, the trend is {'upward' if shap_val > 0 else 'downward'} — a {'positive' if shap_val > 0 else 'cautionary'} signal for next season.",
         'ppg_trend_4yr': f"His four-year scoring arc is {'improving' if shap_val > 0 else 'declining'}, which {'strengthens' if shap_val > 0 else 'weakens'} the overall projection.",
         # Minutes / workload
-        'minutes_per_game': f"He plays around {formatted_val} minutes per game — {'heavy usage that shows the coaching staff rely on him' if shap_val > 0 else 'a lighter role that limits his statistical ceiling'}.",
-        'mpg_lag1':     f"Last season he averaged {formatted_val} minutes per game — {'consistent high workload supports strong numbers' if shap_val > 0 else 'reduced playing time signals a smaller role going forward'}.",
+        'minutes_per_game': f"He plays around {formatted_val} minutes per game — {'heavy court time shows the coaching staff rely on him heavily' if shap_val > 0 else 'a lighter role limits how many stats he can accumulate per game'}.",
+        'mpg_lag1':     f"Last season he averaged {formatted_val} minutes per game — {'consistent heavy workload supports strong numbers' if shap_val > 0 else 'reduced playing time signals a smaller role going forward'}.",
         'mpg_lag2':     f"Two seasons ago he logged {formatted_val} minutes per night — {'sustained heavy use' if shap_val > 0 else 'reduced role'} in his history.",
         'mpg_trend_2yr': f"His minutes per game have been {'increasing' if shap_val > 0 else 'decreasing'} over the last two seasons, suggesting {'growing' if shap_val > 0 else 'shrinking'} opportunity.",
         # Shooting efficiency (translated away from TS%)
@@ -154,9 +155,9 @@ def _build_reason(feature, value, shap_val, target_key, current_age=None):
         'ts_pct_lag3':  f"A three-year-old efficiency rating of {formatted_val} {'anchors a positive' if shap_val > 0 else 'suggests historically lower'} shooting baseline.",
         'fg_pct_lag1':  f"He shot {formatted_val} from the field last season — {'efficient scoring that boosts' if shap_val > 0 else 'below-average accuracy that lowers'} the outlook.",
         'fg_pct_lag2':  f"Two seasons ago he connected on {formatted_val} of his shots — {'a solid' if shap_val > 0 else 'a modest'} historical mark.",
-        # Role / ball-handling (usage/assist rate translated)
-        'usage_rate':   f"He has the ball in his hands {'a lot' if value > 0.25 else 'at a moderate rate'} — {'a primary option role boosts expected output' if shap_val > 0 else 'a supporting role limits raw counting stats'}.",
-        'assist_rate':  f"He creates scoring chances for teammates {'frequently' if shap_val > 0 else 'less often than average'} — {'playmaking volume lifts' if shap_val > 0 else 'lower playmaking role lowers'} the overall forecast.",
+        # Role / ball-handling (usage/assist rate — purely direction driven, no jargon)
+        'usage_rate':   f"He {'plays a primary offensive role and has the ball in his hands frequently — the model expects high output from him' if shap_val > 0 else 'operates in a secondary role and does not dominate the ball — the model expects leaner counting stats as a result'}.",
+        'assist_rate':  f"He creates scoring chances for teammates {'frequently' if shap_val > 0 else 'less often than average'} — {'strong playmaking volume positively affects' if shap_val > 0 else 'a lower passing role negatively affects'} the overall forecast.",
         'rebound_rate': f"He grabs {'more' if shap_val > 0 else 'fewer'} rebounds per possession than the average player at his position, which {'helps' if shap_val > 0 else 'slightly drags'} the projection.",
         # Age
         'age':          f"At {display_age} years old, he is {'in the prime years of his athletic career — a positive signal' if shap_val >= 0 else 'entering the later stage of his career, where a gradual performance decline is normal and expected'}.",
@@ -263,18 +264,15 @@ try:
         model_metadata = json.load(f)
     print(f"✓ Loaded model metadata (version {model_metadata.get('model_version')})")
 
-    # ── Build per-target SHAP TreeExplainers from sub-estimators ──────────────
-    # ml_model is a MultiOutputRegressor; ml_model.estimators_ gives one
-    # XGBRegressor per target — we wrap each with shap.TreeExplainer
-    print("Building per-target SHAP explainers...")
-    shap_explainers = {}
-    for i, target in enumerate(target_names):
-        sub_model = ml_model.estimators_[i]
-        shap_explainers[target] = shap.TreeExplainer(
-            sub_model,
-            feature_perturbation="tree_path_dependent"
-        )
-        print(f"  ✓ SHAP explainer for {target}")
+    # ── Load pre-built SHAP TreeExplainers ────────────────────────────────────
+    print("Loading SHAP explainers...")
+    try:
+        with open('models/shap_explainers_v2.pkl', 'rb') as f:
+            shap_explainers = pickle.load(f)
+        print(f"✓ Loaded {len(shap_explainers)} SHAP explainers")
+    except Exception as e:
+        print(f"⚠ Could not load shap_explainers_v2.pkl. Please run the notebook builder. Error: {e}")
+        shap_explainers = {}
 
     # ── Load player data ──────────────────────────────────────────────────────
     players_df = load_data_from_db()
