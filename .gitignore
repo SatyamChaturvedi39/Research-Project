@@ -30,12 +30,6 @@ Thumbs.db
 desktop.ini
 
 # Project specific
-scripts
-models/*.pkl
-models/*.txt
-models/*.json
-data/raw/*.csv
-data/processed/*.csv
 *.md
 
 # Temporary files
