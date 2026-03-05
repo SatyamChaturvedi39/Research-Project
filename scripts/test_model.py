@@ -20,7 +20,7 @@ print("\n[TEST 1] Checking model files...")
 
 required_files = {
     'model': 'models/player_multioutput_v2.pkl',
-    'explainer': 'models/shap_explainer_v2.pkl',
+    'explainer': 'models/shap_explainers_v2.pkl',
     'features': 'models/feature_names_v2.txt',
     'targets': 'models/target_names_v2.txt',
     'metadata': 'models/model_metadata_v2.json',

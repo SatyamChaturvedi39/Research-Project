@@ -285,6 +285,21 @@ try:
     else:
         model_loaded = False
 
+    # ── Load 2025-26 team overrides ───────────────────────────────────────────
+    # The ML model uses 2024-25 stats for predictions, but the TEAM shown in
+    # the UI must reflect where each player plays RIGHT NOW in 2025-26.
+    TEAM_OVERRIDES_PATH = 'data/team_overrides_2025_26.json'
+    team_overrides = {}
+    try:
+        with open(TEAM_OVERRIDES_PATH, 'r', encoding='utf-8') as f:
+            overrides_data = json.load(f)
+        team_overrides = overrides_data.get('overrides', {})
+        print(f"✓ Loaded {len(team_overrides)} team overrides for 2025-26 season")
+    except FileNotFoundError:
+        print(f"⚠ No team overrides file found at {TEAM_OVERRIDES_PATH}")
+    except Exception as e:
+        print(f"⚠ Error loading team overrides: {e}")
+
 except Exception as e:
     print(f"❌ Error loading model: {str(e)}  (app runs in demo mode)")
     ml_model = None
@@ -295,6 +310,7 @@ except Exception as e:
     players_df = None
     latest_season = None
     model_loaded = False
+    team_overrides = {}
 
 
 # ============================================================================
@@ -302,10 +318,35 @@ except Exception as e:
 # ============================================================================
 
 def get_latest_season_data():
-    """Get data from the most recent season."""
+    """
+    Get data from the most recent season, deduplicated and with team
+    assignments updated to the current 2025-26 season.
+
+    Step 1: Dedup — players traded mid-season (2024-25) appear multiple
+            times; keep only the last row (final team that season).
+    Step 2: Override — apply team_overrides dict so that players who
+            changed teams between 2024-25 and 2025-26 (via trades,
+            free agency, draft) are shown on their CURRENT team.
+
+    The ML feature vector is never modified — only the 'team' column
+    used for display and roster grouping is updated.
+    """
     if not model_loaded or players_df is None:
         return None
-    return players_df[players_df['season'] == latest_season]
+
+    season_df = players_df[players_df['season'] == latest_season].copy()
+
+    # Step 1: Drop earlier trade stints — keep only the final team per player
+    season_df = season_df.drop_duplicates(subset='player_name', keep='last')
+
+    # Step 2: Apply 2025-26 team overrides
+    if team_overrides:
+        season_df['team'] = season_df.apply(
+            lambda row: team_overrides.get(row['player_name'], row['team']),
+            axis=1
+        )
+
+    return season_df
 
 
 def calculate_current_age(dataset_age, dataset_season):
@@ -498,15 +539,31 @@ def predict():
     if not player_name:
         return jsonify({'error': 'Player name required'}), 400
 
-    # Find player
-    player_data = players_df[
-        players_df['player_name'].str.lower() == player_name.lower()
-    ].sort_values('season', ascending=False)
+    # Find player — use the deduplicated latest-season view so the team shown
+    # matches where the player currently plays (handles mid-season trades).
+    latest_season_df = get_latest_season_data()
+    current_row = None
+    if latest_season_df is not None:
+        match = latest_season_df[
+            latest_season_df['player_name'].str.lower() == player_name.lower()
+        ]
+        if len(match) > 0:
+            current_row = match.iloc[0]
 
-    if len(player_data) == 0:
-        return jsonify({'error': f'Player "{player_name}" not found'}), 404
+    # Fall back to any season if not found in latest (e.g. retired player lookup)
+    if current_row is None:
+        all_seasons = players_df[
+            players_df['player_name'].str.lower() == player_name.lower()
+        ].sort_values('season', ascending=False)
+        if len(all_seasons) == 0:
+            return jsonify({'error': f'Player "{player_name}" not found'}), 404
+        current_row = all_seasons.iloc[0].copy()
+        # Apply team override if available
+        pname = current_row.get('player_name', '')
+        if pname in team_overrides:
+            current_row['team'] = team_overrides[pname]
 
-    latest = player_data.iloc[0]
+    latest = current_row
     current_age = calculate_current_age(latest['age'], latest['season'])
 
     # Build display season string
