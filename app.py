@@ -228,7 +228,7 @@ def load_data_from_db():
                 flattened_rows.append(s)
 
         df = pd.DataFrame(flattened_rows)
-        print(f"✓ Successfully loaded {len(df)} rows from MongoDB")
+        print(f"[OK] Successfully loaded {len(df)} rows from MongoDB")
         client.close()
         return df
 
@@ -238,7 +238,7 @@ def load_data_from_db():
         try:
             return pd.read_csv('data/processed/player_features_v2_temporal.csv')
         except Exception:
-            print("❌ Critical: Could not load data from DB or CSV")
+            print("[ERROR] Critical: Could not load data from DB or CSV")
             return None
 
 
@@ -250,26 +250,26 @@ print("Loading ML model and artifacts...")
 try:
     with open('models/player_multioutput_v2.pkl', 'rb') as f:
         ml_model = pickle.load(f)
-    print("✓ Loaded multi-output model")
+    print("[OK] Loaded multi-output model")
 
     with open('models/feature_names_v2.txt', 'r') as f:
         feature_names = [line.strip() for line in f.readlines()]
-    print(f"✓ Loaded {len(feature_names)} feature names")
+    print(f"[OK] Loaded {len(feature_names)} feature names")
 
     with open('models/target_names_v2.txt', 'r') as f:
         target_names = [line.strip() for line in f.readlines()]
-    print(f"✓ Loaded {len(target_names)} target names")
+    print(f"[OK] Loaded {len(target_names)} target names")
 
     with open('models/model_metadata_v2.json', 'r') as f:
         model_metadata = json.load(f)
-    print(f"✓ Loaded model metadata (version {model_metadata.get('model_version')})")
+    print(f"[OK] Loaded model metadata (version {model_metadata.get('model_version')})")
 
     # ── Load pre-built SHAP TreeExplainers ────────────────────────────────────
     print("Loading SHAP explainers...")
     try:
         with open('models/shap_explainers_v2.pkl', 'rb') as f:
             shap_explainers = pickle.load(f)
-        print(f"✓ Loaded {len(shap_explainers)} SHAP explainers")
+        print(f"[OK] Loaded {len(shap_explainers)} SHAP explainers")
     except Exception as e:
         print(f"⚠ Could not load shap_explainers_v2.pkl. Please run the notebook builder. Error: {e}")
         shap_explainers = {}
@@ -279,8 +279,8 @@ try:
 
     if players_df is not None:
         latest_season = players_df['season'].max()
-        print(f"✓ Loaded {len(players_df)} player-season records")
-        print(f"✓ Latest season detected: {latest_season}")
+        print(f"[OK] Loaded {len(players_df)} player-season records")
+        print(f"[OK] Latest season detected: {latest_season}")
         model_loaded = True
     else:
         model_loaded = False
@@ -294,14 +294,14 @@ try:
         with open(TEAM_OVERRIDES_PATH, 'r', encoding='utf-8') as f:
             overrides_data = json.load(f)
         team_overrides = overrides_data.get('overrides', {})
-        print(f"✓ Loaded {len(team_overrides)} team overrides for 2025-26 season")
+        print(f"[OK] Loaded {len(team_overrides)} team overrides for 2025-26 season")
     except FileNotFoundError:
         print(f"⚠ No team overrides file found at {TEAM_OVERRIDES_PATH}")
     except Exception as e:
         print(f"⚠ Error loading team overrides: {e}")
 
 except Exception as e:
-    print(f"❌ Error loading model: {str(e)}  (app runs in demo mode)")
+    print(f"[ERROR] Error loading model: {str(e)}  (app runs in demo mode)")
     ml_model = None
     shap_explainers = {}
     feature_names = []
@@ -568,11 +568,13 @@ def predict():
 
     # Build display season string
     season_parts = latest['season'].split('-')
-    start_yr = int(season_parts[0])
-    if start_yr < 50:
-        start_yr += 2000
-    else:
-        start_yr += 1900
+    season_start_year_str = season_parts[0]
+    start_yr = int(season_start_year_str)
+    if len(season_start_year_str) == 2:
+        if start_yr < 50:
+            start_yr += 2000
+        else:
+            start_yr += 1900
     display_season = f"{start_yr}-{start_yr + 1}"
 
     # Check for missing features
