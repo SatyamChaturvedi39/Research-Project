@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="NBA Trade Analyzer - AI-powered player predictions with 54-feature ML model. Analyze trades across all 30 NBA teams.">
+    <meta name="description"
+        content="NBA Trade Analyzer - AI-powered player predictions with 54-feature ML model. Analyze trades across all 30 NBA teams.">
     <title>NBA Trade Analyzer - AI-Powered Player Predictions</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,7 +39,8 @@
         <div class="header-icons">
             <button class="icon-btn" id="theme-toggle" aria-label="Toggle light/dark mode">🌙</button>
             <button class="icon-btn" aria-label="Search">🔍</button>
-            <button class="icon-btn hamburger-btn" id="hamburger-btn" aria-label="Open menu" onclick="toggleMobileNav()">☰</button>
+            <button class="icon-btn hamburger-btn" id="hamburger-btn" aria-label="Open menu"
+                onclick="toggleMobileNav()">☰</button>
         </div>
     </header>
 
@@ -59,7 +61,8 @@
         <section class="hero-content">
             <div class="hero-small-title">AI-Powered Analytics</div>
             <h1 class="hero-main-title">Predict Player<br>Performance</h1>
-            <p class="hero-description">Advanced ML model using 54 features from 5 seasons<br>of NBA data to predict next season stats<br>with industry-leading accuracy</p>
+            <p class="hero-description">Advanced ML model using 54 features from 5 seasons<br>of NBA data to predict
+                next season stats<br>with industry-leading accuracy</p>
         </section>
 
         <div class="scroll-indicator">
@@ -78,15 +81,25 @@
                     <select id="team-select-outgoing" class="main-team-select" onchange="onMainTeamChange('outgoing')">
                         <option value="">Select Team...</option>
                     </select>
+                    <div id="health-badge-outgoing" class="team-health-badge" style="display: none;">
+                        <span class="hb-label">ROSTER HEALTH:</span>
+                        <span class="hb-value" id="health-val-outgoing">--</span>
+                        <span class="hb-grade" id="health-grade-outgoing">--</span>
+                    </div>
                 </div>
-                
+
                 <div class="trade-arrow">↔ TRADE ↔</div>
-                
+
                 <div class="team-selector-container">
                     <label for="team-select-incoming">Team B (Incoming)</label>
                     <select id="team-select-incoming" class="main-team-select" onchange="onMainTeamChange('incoming')">
                         <option value="">Select Team...</option>
                     </select>
+                    <div id="health-badge-incoming" class="team-health-badge" style="display: none;">
+                        <span class="hb-label">ROSTER HEALTH:</span>
+                        <span class="hb-value" id="health-val-incoming">--</span>
+                        <span class="hb-grade" id="health-grade-incoming">--</span>
+                    </div>
                 </div>
             </div>
 
@@ -97,7 +110,8 @@
                         <!-- Players will be added here dynamically -->
                         <div class="empty-state">Select a team above to start</div>
                     </div>
-                    <button id="btn-add-outgoing" class="add-player-btn" onclick="openPlayerModal('outgoing')" disabled>+ Add Player</button>
+                    <button id="btn-add-outgoing" class="add-player-btn" onclick="openPlayerModal('outgoing')"
+                        disabled>+ Add Player</button>
                 </div>
 
                 <div class="vs-divider">VS</div>
@@ -105,10 +119,11 @@
                 <div class="players-column incoming">
                     <h3>Player(s) from Team B</h3>
                     <div class="players-list" id="incoming-players">
-                         <!-- Players will be added here dynamically -->
-                         <div class="empty-state">Select a team above to start</div>
+                        <!-- Players will be added here dynamically -->
+                        <div class="empty-state">Select a team above to start</div>
                     </div>
-                    <button id="btn-add-incoming" class="add-player-btn" onclick="openPlayerModal('incoming')" disabled>+ Add Player</button>
+                    <button id="btn-add-incoming" class="add-player-btn" onclick="openPlayerModal('incoming')"
+                        disabled>+ Add Player</button>
                 </div>
             </div>
 
@@ -116,38 +131,132 @@
 
             <div class="results-dashboard" id="results-dashboard" style="display: none;">
 
+                <!-- Core Outcome Row -->
+                <div class="trade-outcome-row">
+                    <div class="outcome-card" id="outcome-card-a">
+                        <div class="oc-team" id="oc-team-a">LAL</div>
+                        <div class="oc-main">
+                            <div class="oc-metric">
+                                <span class="oc-label">Expected Wins</span>
+                                <div class="oc-val-group">
+                                    <span class="oc-value" id="oc-wins-a">--</span>
+                                    <span class="oc-delta" id="oc-delta-a">--</span>
+                                </div>
+                            </div>
+                            <div class="oc-ci" id="oc-ci-a">90% CI: [--, --]</div>
+
+                            <div class="oc-metric">
+                                <span class="oc-label">Playoff Prob.</span>
+                                <div class="oc-val-group">
+                                    <span class="oc-value" id="oc-playoff-a">--</span>
+                                    <span class="oc-delta" id="oc-p-delta-a">--</span>
+                                </div>
+                            </div>
+
+                            <div class="oc-divider"></div>
+
+                            <div class="oc-metric small">
+                                <span class="oc-label">Injury Risk</span>
+                                <span class="oc-delta" id="oc-inj-delta-a">--</span>
+                            </div>
+                            <div class="oc-metric small">
+                                <span class="oc-label">Roster Health</span>
+                                <span class="oc-delta" id="oc-health-delta-a">--</span>
+                            </div>
+                            <div class="oc-metric small">
+                                <span class="oc-label">Medical Index</span>
+                                <span class="oc-delta" id="oc-med-delta-a">--</span>
+                            </div>
+                        </div>
+                        <div class="oc-footer">
+                            <span class="oc-grade" id="oc-grade-a">NEUTRAL</span>
+                        </div>
+                    </div>
+
+                    <div class="outcome-fairness">
+                        <div class="fairness-title">FAIRNESS</div>
+                        <div class="fairness-value" id="fairness-value">--</div>
+                        <div class="fairness-label" id="fairness-label">FAIR</div>
+
+                        <div class="overall-assessment-block">
+                            <div class="oa-title">QUALITY</div>
+                            <div class="oa-value" id="oa-quality">--</div>
+                            <div class="oa-label" id="oa-classification">--</div>
+                        </div>
+                    </div>
+
+                    <div class="outcome-card" id="outcome-card-b">
+                        <div class="oc-team" id="oc-team-b">GSW</div>
+                        <div class="oc-main">
+                            <div class="oc-metric">
+                                <span class="oc-label">Expected Wins</span>
+                                <div class="oc-val-group">
+                                    <span class="oc-value" id="oc-wins-b">--</span>
+                                    <span class="oc-delta" id="oc-delta-b">--</span>
+                                </div>
+                            </div>
+                            <div class="oc-ci" id="oc-ci-b">90% CI: [--, --]</div>
+
+                            <div class="oc-metric">
+                                <span class="oc-label">Playoff Prob.</span>
+                                <div class="oc-val-group">
+                                    <span class="oc-value" id="oc-playoff-b">--</span>
+                                    <span class="oc-delta" id="oc-p-delta-b">--</span>
+                                </div>
+                            </div>
+
+                            <div class="oc-divider"></div>
+
+                            <div class="oc-metric small">
+                                <span class="oc-label">Injury Risk</span>
+                                <span class="oc-delta" id="oc-inj-delta-b">--</span>
+                            </div>
+                            <div class="oc-metric small">
+                                <span class="oc-label">Roster Health</span>
+                                <span class="oc-delta" id="oc-health-delta-b">--</span>
+                            </div>
+                            <div class="oc-metric small">
+                                <span class="oc-label">Medical Index</span>
+                                <span class="oc-delta" id="oc-med-delta-b">--</span>
+                            </div>
+                        </div>
+                        <div class="oc-footer">
+                            <span class="oc-grade" id="oc-grade-b">NEUTRAL</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulation Info -->
+                <div class="sim-info-banner">
+                    <span class="sim-icon">⚙️</span>
+                    Analysis based on <strong>1,000 Monte Carlo iterations</strong> sampling injury risk and stat
+                    variance.
+                </div>
+
+                <!-- Traded Players List Summary -->
+                <div class="traded-players-summary">
+                    <div class="tp-col">
+                        <h4>SENT BY <span id="tp-team-a">LAL</span></h4>
+                        <div id="tp-list-a" class="tp-mini-list"></div>
+                    </div>
+                    <div class="tp-divider">↔</div>
+                    <div class="tp-col">
+                        <h4>SENT BY <span id="tp-team-b">ATL</span></h4>
+                        <div id="tp-list-b" class="tp-mini-list"></div>
+                    </div>
+                </div>
+
                 <!-- Score + Meter Row -->
                 <div class="score-meter-row">
-
-                    <!-- LEFT: big score number -->
                     <div class="score-display-block">
-                        <div class="score-eyebrow">ML-Predicted Trade Score</div>
+                        <div class="score-eyebrow">Overall Trade Rating</div>
                         <div class="score-value" id="score-value">--</div>
                         <div class="score-out-of">/ 100</div>
                     </div>
 
-                    <!-- RIGHT: Score Guide Component -->
-                    <div class="score-guide-block">
-                        <div class="guide-title">Score Meaning</div>
-                        <div class="guide-scale">
-                            <div class="guide-zone" style="background: rgba(255, 68, 102, 0.15); border-color: #ff4466; color: #ff4466;">
-                                <div class="gz-range">0-30</div>
-                                <div class="gz-label">Poor</div>
-                            </div>
-                            <div class="guide-zone" style="background: rgba(255, 159, 67, 0.15); border-color: #ff9f43; color: #ff9f43;">
-                                <div class="gz-range">31-50</div>
-                                <div class="gz-label">Risky</div>
-                            </div>
-                            <div class="guide-zone" style="background: rgba(255, 215, 0, 0.15); border-color: #ffd700; color: #ffd700;">
-                                <div class="gz-range">51-70</div>
-                                <div class="gz-label">Good</div>
-                            </div>
-                            <div class="guide-zone" style="background: rgba(0, 255, 135, 0.15); border-color: #00ff87; color: #00ff87;">
-                                <div class="gz-range">71-100</div>
-                                <div class="gz-label">Great</div>
-                            </div>
-                        </div>
-                        <div class="guide-note">Aim for a score of <strong>71 or above</strong> for a confident trade.</div>
+                    <div class="score-explanation">
+                        <div class="explanation-title">Why this score?</div>
+                        <p id="trade-summary-text">Run the analysis to see the model's high-level summary here.</p>
                     </div>
                 </div>
 
@@ -155,10 +264,11 @@
                 <div class="trade-explanation-card">
                     <div class="te-header">
                         <span class="te-icon">🤖</span>
-                        <span class="te-title">XGBoost Model Analysis</span>
+                        <span class="te-title">Logic-Based Trade Factors</span>
                     </div>
                     <div class="trade-explanation" id="trade-explanation">
-                        <p class="explanation-sentence lead">Run the analysis to see the model's reasoning here.</p>
+                        <p class="explanation-sentence lead">The simulation projects how this swap affects depth,
+                            top-heaviness, and availability.</p>
                     </div>
                 </div>
 
@@ -177,14 +287,14 @@
             </div>
             <div class="modal-body">
                 <!-- Team selection removed, implied by side -->
-                
+
                 <div class="selector-group">
                     <label for="player-selector">Select Player to Trade:</label>
                     <select id="player-selector" class="selector-dropdown" onchange="onPlayerSelected()">
                         <option value="">Loading players...</option>
                     </select>
                 </div>
-               
+
                 <button id="confirm-player-btn" class="confirm-btn" onclick="confirmPlayerSelection()" disabled>
                     Confirm Selection
                 </button>
