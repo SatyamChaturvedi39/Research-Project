@@ -124,15 +124,48 @@ function onMainTeamChange(type) {
         list.innerHTML = '<div class="empty-state">Select a team above to start</div>';
     }
 
-    // 3. Prevent selecting same team on both sides
-    // value constraint: Disable this team in the OTHER dropdown
-    Array.from(otherSelect.options).forEach(option => {
-        if (option.value === selectedTeam && selectedTeam !== "") {
-            option.disabled = true;
-        } else {
-            option.disabled = false;
-        }
-    });
+    // Array.from(otherSelect.options).forEach(option => {
+    //     if (option.value === selectedTeam && selectedTeam !== "") {
+    //         option.disabled = true;
+    //     } else {
+    //         option.disabled = false;
+    //     }
+    // });
+
+    // 4. Fetch team health
+    if (selectedTeam) {
+        fetchTeamHealth(selectedTeam, type);
+    } else {
+        document.getElementById(`health-badge-${type}`).style.display = 'none';
+    }
+}
+
+async function fetchTeamHealth(teamCode, type) {
+    try {
+        const res = await fetch(`/api/roster/${teamCode}`);
+        const data = await res.json();
+
+        const badge = document.getElementById(`health-badge-${type}`);
+        const valEl = document.getElementById(`health-val-${type}`);
+        const gradeEl = document.getElementById(`health-grade-${type}`);
+
+        badge.style.display = 'flex';
+        valEl.textContent = data.roster_health.roster_health_score;
+        gradeEl.textContent = data.roster_health.health_grade;
+
+        // Color based on grade
+        const colors = {
+            'EXCELLENT': '#00ff87',
+            'GOOD': '#ffd700',
+            'AVERAGE': '#ff9f43',
+            'BELOW AVERAGE': '#ff4466',
+            'POOR': '#ff0000'
+        };
+        gradeEl.style.color = colors[data.roster_health.health_grade] || '#fff';
+
+    } catch (e) {
+        console.error("Health fetch failed:", e);
+    }
 }
 
 function openPlayerModal(type) {
@@ -273,11 +306,26 @@ async function addPlayerToTrade(playerName, type) {
         playerCard.setAttribute('data-current-age', p.current_age);
         playerCard.setAttribute('data-team', p.team);
 
+        // Medical color
+        const medColors = {
+            'EXCELLENT': '#00ff87',
+            'GOOD': '#94fbab',
+            'FAIR': '#ffd700',
+            'POOR': '#ff9f43',
+            'CRITICAL': '#ff4466'
+        };
+        const medColor = medColors[p.medical_grade] || '#fff';
 
         playerCard.innerHTML = `
             <div class="pc-header">
-                <div class="pc-name">${p.player_name}</div>
-                <span class="${confBadgeClass}">${confLabel.toUpperCase()} CONF</span>
+                <div class="pc-name-group">
+                    <div class="pc-name">${p.player_name}</div>
+                    <div class="pc-med-grade" style="color: ${medColor}">Medical: ${p.medical_grade}</div>
+                </div>
+                <div class="pc-badges">
+                    <span class="${confBadgeClass}">${confLabel.toUpperCase()} CONF</span>
+                    <span class="inj-badge inj-${p.injury_risk_category.toLowerCase().replace(' ', '-')}">${p.injury_risk_category} RISK</span>
+                </div>
             </div>
             <div class="pc-meta">${p.team} · Age ${p.current_age} · ${p.last_season_year}</div>
 
@@ -300,7 +348,8 @@ async function addPlayerToTrade(playerName, type) {
                 </div>
             </div>
 
-            ${ppgConf ? `<div class="pc-range">Confidence range: <strong>${confRange}</strong> (MAE ±${ppgConf.mae})</div>` : ''}
+            ${ppgConf ? `<div class="pc-range">Consistency Range: <span>${confRange}</span></div>` : ''}
+            <div class="pc-medical-info">Injury Probability: <strong>${(p.injury_risk_prob * 100).toFixed(1)}%</strong></div>
 
             ${shapHTML}
 
@@ -313,7 +362,7 @@ async function addPlayerToTrade(playerName, type) {
     } catch (error) {
         loadingCard.remove();
         console.error('Failed to add player:', error);
-        showError('Network error. Please try again.');
+        showError(`Error adding player: ${error.message || 'System error'}`);
     }
 }
 
@@ -397,7 +446,6 @@ function removePlayer(button) {
 
 async function analyzeTrade() {
     const dashboard = document.getElementById('results-dashboard');
-
     const outgoingCards = document.querySelectorAll('#outgoing-players .player-card');
     const incomingCards = document.querySelectorAll('#incoming-players .player-card');
 
@@ -406,91 +454,189 @@ async function analyzeTrade() {
         return;
     }
 
+    const teamA = document.getElementById('team-select-outgoing').value;
+    const teamB = document.getElementById('team-select-incoming').value;
+    const sentA = Array.from(outgoingCards).map(c => c.getAttribute('data-player-name'));
+    const sentB = Array.from(incomingCards).map(c => c.getAttribute('data-player-name'));
+
     dashboard.style.display = 'block';
+    dashboard.scrollIntoView({ behavior: 'smooth' });
+
+    // Reset placeholders
     document.getElementById('score-value').textContent = '…';
+    document.getElementById('fairness-value').textContent = '…';
 
-    // ── Gather predicted stats from player cards ──────────────────────────
-    const sumCards = (cards, attr) =>
-        Array.from(cards).reduce((s, c) => s + parseFloat(c.getAttribute(attr) || 0), 0);
-
-    const outPPG = sumCards(outgoingCards, 'data-predicted-ppg');
-    const inPPG = sumCards(incomingCards, 'data-predicted-ppg');
-    const outRPG = sumCards(outgoingCards, 'data-predicted-rpg') || 0;
-    const inRPG = sumCards(incomingCards, 'data-predicted-rpg') || 0;
-    const outAPG = sumCards(outgoingCards, 'data-predicted-apg') || 0;
-    const inAPG = sumCards(incomingCards, 'data-predicted-apg') || 0;
-
-    const outAvgAge = sumCards(outgoingCards, 'data-current-age') / outgoingCards.length;
-    const inAvgAge = sumCards(incomingCards, 'data-current-age') / incomingCards.length;
-
-    // Average ML confidence: high=1.0, medium=0.6, low=0.3
-    const confWeight = (cards) => {
-        const confMap = { high: 1.0, medium: 0.6, low: 0.3 };
-        let total = 0;
-        Array.from(cards).forEach(c => {
-            const badge = c.querySelector('.conf-badge');
-            if (badge) {
-                const cls = Array.from(badge.classList).find(cl => cl.startsWith('conf-') && cl !== 'conf-badge');
-                total += confMap[cls?.replace('conf-', '') || 'medium'] || 0.6;
-            } else {
-                total += 0.6;
-            }
+    try {
+        const response = await fetch('/api/trade/evaluate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                team_a: teamA,
+                team_b: teamB,
+                sent_a: sentA,
+                sent_b: sentB
+            })
         });
-        return total / cards.length;
+
+        if (!response.ok) {
+            const err = await response.json();
+            showError(err.error || 'Evaluation failed');
+            return;
+        }
+
+        const data = await response.json();
+        renderTradeEvaluation(data);
+
+    } catch (error) {
+        console.error('Failed to analyze trade:', error);
+        showError('Network error during evaluation.');
+    }
+}
+
+function renderTradeEvaluation(data) {
+    // 1. Team Names
+    document.getElementById('oc-team-a').textContent = data.team_a.code;
+    document.getElementById('oc-team-b').textContent = data.team_b.code;
+    document.getElementById('tp-team-a').textContent = data.team_a.code;
+    document.getElementById('tp-team-b').textContent = data.team_b.code;
+
+    // 2. Metrics for Team A
+    animateValue('oc-wins-a', 0, data.team_a.post_wins, 1);
+    setDelta('oc-delta-a', data.team_a.win_change, 'wins');
+    document.getElementById('oc-ci-a').textContent = `90% CI: [${data.team_a.win_ci[0] > 0 ? '+' : ''}${data.team_a.win_ci[0]}, +${data.team_a.win_ci[1]}]`;
+
+    document.getElementById('oc-playoff-a').textContent = (data.team_a.post_wins >= 42 ? Math.min(99.9, 50 + (data.team_a.post_wins - 42) * 10) : Math.max(0.1, 40 - (42 - data.team_a.post_wins) * 10)).toFixed(1) + '%';
+    setDelta('oc-p-delta-a', data.team_a.playoff_change, '%');
+
+    setDelta('oc-inj-delta-a', -data.team_a.injury_risk_change, '%', true); // Invert for "Better/Worse" logic
+    setDelta('oc-health-delta-a', data.team_a.health_change, ' pts');
+    setDelta('oc-med-delta-a', data.team_a.medical_change, ' pts');
+
+    document.getElementById('oc-grade-a').textContent = data.team_a.grade;
+    setGradeColor('oc-grade-a', data.team_a.grade);
+
+    // 3. Metrics for Team B
+    animateValue('oc-wins-b', 0, data.team_b.post_wins, 1);
+    setDelta('oc-delta-b', data.team_b.win_change, 'wins');
+    document.getElementById('oc-ci-b').textContent = `90% CI: [${data.team_b.win_ci[0] > 0 ? '+' : ''}${data.team_b.win_ci[0]}, +${data.team_b.win_ci[1]}]`;
+
+    document.getElementById('oc-playoff-b').textContent = (data.team_b.post_wins >= 42 ? Math.min(99.9, 50 + (data.team_b.post_wins - 42) * 10) : Math.max(0.1, 40 - (42 - data.team_b.post_wins) * 10)).toFixed(1) + '%';
+    setDelta('oc-p-delta-b', data.team_b.playoff_change, '%');
+
+    setDelta('oc-inj-delta-b', -data.team_b.injury_risk_change, '%', true);
+    setDelta('oc-health-delta-b', data.team_b.health_change, ' pts');
+    setDelta('oc-med-delta-b', data.team_b.medical_change, ' pts');
+
+    document.getElementById('oc-grade-b').textContent = data.team_b.grade;
+    setGradeColor('oc-grade-b', data.team_b.grade);
+
+    // 4. Fairness & Quality
+    document.getElementById('fairness-value').textContent = data.assessment.fairness + '%';
+    document.getElementById('fairness-label').textContent = data.assessment.fairness > 90 ? 'VERY FAIR' : data.assessment.fairness > 75 ? 'FAIR' : 'ONE-SIDED';
+
+    document.getElementById('oa-quality').textContent = data.assessment.combined_quality;
+    document.getElementById('oa-classification').textContent = data.assessment.classification;
+
+    // 5. Main Score (averaged for the top display)
+    const meanScore = (data.team_a.score + data.team_b.score) / 2;
+    animateValue('score-value', 0, meanScore, 0);
+    updateScoreColor(meanScore);
+
+    // 6. Traded Players Summary
+    renderTradedPlayers(data.traded_players);
+
+    // 7. Explanation Summary
+    const summaryText = document.getElementById('trade-summary-text');
+    let summary = `This trade is rated as **${data.assessment.classification}**. `;
+    if (data.team_a.win_change > 0 && data.team_b.win_change > 0) {
+        summary += `Both teams improve their projected ceilings. `;
+    }
+    summary += `Winner: **${data.assessment.winner}** by ${data.assessment.win_margin} wins.`;
+    summaryText.innerHTML = summary;
+
+    // 8. Detailed Bullets
+    const detailWrap = document.getElementById('trade-explanation');
+    const sentences = [];
+
+    if (Math.abs(data.team_a.medical_change) > 2) {
+        sentences.push(`The simulation identifies a shift in long-term durability profiles between the involved rosters.`);
+    }
+    sentences.push(`Monte Carlo analysis confirms ${data.team_a.code} has a 90% chance to finish within [${data.team_a.win_ci[0]}, ${data.team_a.win_ci[1]}] wins of their baseline.`);
+    sentences.push(`Post-trade roster health for ${data.team_a.code} is graded as **${data.team_a.health_grade_post}**.`);
+
+    detailWrap.innerHTML = sentences.map((s, i) => `
+        <p class="explanation-sentence${i === 0 ? ' lead' : ''}">${s}</p>
+    `).join('');
+}
+
+function renderTradedPlayers(players) {
+    const listA = document.getElementById('tp-list-a');
+    const listB = document.getElementById('tp-list-b');
+
+    const buildMiniItem = (p) => `
+        <div class="tp-mini-item">
+            <div class="tp-mini-name">${p.player_name}</div>
+            <div class="tp-mini-stats">${p.points_per_game.toFixed(1)} PPG · ${(p.injury_risk_prob * 100).toFixed(1)}% Risk · <span class="med-text">${p.medical_grade}</span></div>
+        </div>
+    `;
+
+    listA.innerHTML = players.from_a.map(buildMiniItem).join('');
+    listB.innerHTML = players.from_b.map(buildMiniItem).join('');
+}
+
+function setDelta(id, val, unit, invertColor = false) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isPos = val > 0;
+    const isNeg = val < 0;
+
+    let displayVal = `${isPos ? '+' : ''}${val.toFixed(1)}${unit}`;
+    el.textContent = displayVal;
+
+    // Logic: for injury risk, positive DELTA is BAD (red), negative is GOOD (green)
+    // But we pass inverted delta to make it intuitive (+2% Risk = Red)
+    // Wait, let's just use the value directly and a flag
+    if (invertColor) {
+        el.className = `oc-delta ${isPos ? 'neg' : isNeg ? 'pos' : ''}`;
+    } else {
+        el.className = `oc-delta ${isPos ? 'pos' : isNeg ? 'neg' : ''}`;
+    }
+}
+
+function setGradeColor(id, grade) {
+    const el = document.getElementById(id);
+    const colors = {
+        'BENEFICIAL': '#00ff87',
+        'SLIGHTLY POSITIVE': '#94fbab',
+        'NEUTRAL': '#ffd700',
+        'SLIGHTLY NEGATIVE': '#ff9f43',
+        'HARMFUL': '#ff4466'
     };
-    const outConf = confWeight(outgoingCards);
-    const inConf = confWeight(incomingCards);
+    el.style.color = colors[grade] || '#fff';
+}
 
-    // ── Multi-factor scoring (0–100) ───────────────────────────────────────
-    // Each component scored 0–25, then multiplied by 4 to give 0–100
+function updateScoreColor(score) {
+    const el = document.getElementById('score-value');
+    if (score >= 70) el.style.color = '#00ff87';
+    else if (score >= 50) el.style.color = '#ffd700';
+    else if (score >= 30) el.style.color = '#ff9f43';
+    else el.style.color = '#ff4466';
+}
 
-    // 1. PPG balance (40 pts): how much better is incoming vs outgoing?
-    const ppgDelta = inPPG - outPPG;
-    const ppgScore = Math.min(25, Math.max(0, 12.5 + (ppgDelta / Math.max(outPPG, 1)) * 25));
-
-    // 2. Rebounding balance (20 pts)
-    const rpgDelta = inRPG - outRPG;
-    const rpgScore = Math.min(12.5, Math.max(0, 6.25 + (rpgDelta / Math.max(outRPG, 1)) * 12.5));
-
-    // 3. Playmaking balance (20 pts)
-    const apgDelta = inAPG - outAPG;
-    const apgScore = Math.min(12.5, Math.max(0, 6.25 + (apgDelta / Math.max(outAPG, 1)) * 12.5));
-
-    // 4. Age / youth factor (20 pts): getting younger is good
-    const ageDelta = outAvgAge - inAvgAge;
-    const ageScore = Math.min(12.5, Math.max(0, 6.25 + (ageDelta / 5) * 12.5));
-
-    // 5. Confidence bonus (up to 12.5 pts): higher model confidence = more reliable
-    const confScore = ((outConf + inConf) / 2) * 12.5;
-
-    // Weighted total out of 100
-    const rawScore = (ppgScore + rpgScore + apgScore + ageScore + confScore) * (100 / 75);
-    const finalScore = Math.round(Math.max(0, Math.min(100, rawScore)));
-
-    // ── Animate score counter ─────────────────────────────────────────────
-    setTimeout(() => dashboard.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
-
-    let current = 0;
-    const step = finalScore / 60;
-    const counter = setInterval(() => {
-        current = Math.min(current + step, finalScore);
-        document.getElementById('score-value').textContent = Math.round(current);
-        if (current >= finalScore) clearInterval(counter);
+function animateValue(id, start, end, decimals, suffix = '') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let current = start;
+    const range = end - start;
+    const step = range / 30;
+    const timer = setInterval(() => {
+        current += step;
+        el.textContent = current.toFixed(decimals) + suffix;
+        if ((range > 0 && current >= end) || (range < 0 && current <= end)) {
+            el.textContent = end.toFixed(decimals) + suffix;
+            clearInterval(timer);
+        }
     }, 16);
-
-    // ── Update score meter ────────────────────────────────────────────────
-    updateScoreMeter(finalScore);
-
-    // ── Generate sentence-based explanation ───────────────────────────────
-    updateTradeAnalysis(finalScore, {
-        ppgDelta, outPPG, inPPG,
-        rpgDelta, outRPG, inRPG,
-        apgDelta, outAPG, inAPG,
-        ageDelta, outAvgAge, inAvgAge,
-        outConf, inConf,
-        outCount: outgoingCards.length,
-        inCount: incomingCards.length,
-    });
 }
 
 function updateScoreMeter(score) {

@@ -1882,3 +1882,369 @@ body {
         gap: 10px;
     }
 }
+
+/* ========================================
+   NEW TRADE OUTCOME STYLES
+   ======================================== */
+.team-health-badge {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 12px;
+}
+
+.hb-label {
+    color: var(--color-text-muted);
+    font-weight: 700;
+}
+
+.hb-value {
+    font-weight: 900;
+    color: var(--color-accent-gold);
+}
+
+.hb-grade {
+    font-weight: 700;
+}
+
+.trade-outcome-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 24px;
+    align-items: stretch;
+}
+
+.outcome-card {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: var(--transition);
+}
+
+.outcome-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.oc-team {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: var(--color-text-muted);
+}
+
+.oc-main {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.oc-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.oc-label {
+    font-size: 14px;
+    color: var(--color-text-muted);
+}
+
+.oc-value {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.oc-delta {
+    font-size: 14px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 4px;
+    min-width: 60px;
+    text-align: right;
+}
+
+.oc-delta.pos {
+    color: #00ff87;
+    background: rgba(0, 255, 135, 0.1);
+}
+
+.oc-delta.neg {
+    color: #ff4466;
+    background: rgba(255, 68, 102, 0.1);
+}
+
+.oc-grade {
+    font-size: 14px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.outcome-fairness {
+    width: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(247, 126, 86, 0.05);
+    border: 1px solid rgba(247, 126, 86, 0.2);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    text-align: center;
+}
+
+.fairness-title {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+}
+
+.fairness-value {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--color-accent-primary);
+}
+
+.fairness-label {
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.sim-info-banner {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: var(--radius-md);
+    padding: 12px 20px;
+    font-size: 13px;
+    color: #93c5fd;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sim-icon {
+    font-size: 18px;
+}
+
+/* Player Card Additions */
+.pc-name-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.pc-med-grade {
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 2px;
+}
+
+.pc-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+}
+
+.inj-badge {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.inj-low {
+    background: rgba(0, 255, 135, 0.1);
+    color: #00ff87;
+}
+
+.inj-moderate {
+    background: rgba(255, 215, 0, 0.1);
+    color: #ffd700;
+}
+
+.inj-high {
+    background: rgba(255, 159, 67, 0.1);
+    color: #ff9f43;
+}
+
+.inj-very-high {
+    background: rgba(255, 68, 102, 0.1);
+    color: #ff4466;
+}
+
+.pc-medical-info {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.score-explanation {
+    flex: 1;
+    padding: 0 20px;
+}
+
+.explanation-title {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+#trade-summary-text {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+    .trade-outcome-row {
+        flex-direction: column;
+    }
+
+    .outcome-fairness {
+        width: 100%;
+        flex-direction: column;
+        gap: 20px;
+    }
+}
+
+/* Detailed Analysis Additions */
+.oc-val-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.oc-ci {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    margin-top: -8px;
+    margin-bottom: 4px;
+}
+
+.oc-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.05);
+    margin: 4px 0;
+}
+
+.oc-metric.small {
+    margin-top: 2px;
+}
+
+.oc-metric.small .oc-label {
+    font-size: 12px;
+}
+
+.oc-metric.small .oc-delta {
+    font-size: 11px;
+    min-width: 50px;
+}
+
+.overall-assessment-block {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(247, 126, 86, 0.2);
+    width: 100%;
+}
+
+.oa-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--color-text-muted);
+}
+
+.oa-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.oa-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-accent-primary);
+}
+
+.traded-players-summary {
+    display: flex;
+    gap: 30px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+    align-items: center;
+}
+
+.tp-col {
+    flex: 1;
+}
+
+.tp-col h4 {
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+    color: var(--color-text-muted);
+}
+
+.tp-mini-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tp-mini-item {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+
+.tp-mini-name {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.tp-mini-stats {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.med-text {
+    font-weight: 700;
+    color: var(--color-accent-primary);
+}
+
+.tp-divider {
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 767px) {
+    .traded-players-summary {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .tp-divider {
+        transform: rotate(90deg);
+    }
+}
