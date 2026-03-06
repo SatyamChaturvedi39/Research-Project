@@ -1,4 +1,4 @@
-"""
+﻿"""
 NBA Trade Analyzer - Production Flask Backend
 With industry-standard SHAP explainability (per-target TreeExplainer)
 """
@@ -7,12 +7,23 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 import pickle
+import joblib
 import json
 import shap
 import numpy as np
 import pandas as pd
 from datetime import datetime
 from pymongo import MongoClient
+
+# Internal imports
+from services.trade_analyzer import (
+    normalize_name,
+    calculate_player_medical_score,
+    calculate_roster_health_score,
+    run_injury_adjusted_simulation,
+    calc_trade_score,
+    get_trade_rating
+)
 
 # Load environment variables
 load_dotenv()
@@ -245,29 +256,40 @@ def load_data_from_db():
 # ============================================================================
 # Load ML Model and Artifacts
 # ============================================================================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 print("Loading ML model and artifacts...")
 
 try:
-    with open('models/player_multioutput_v2.pkl', 'rb') as f:
+    with open(os.path.join(BASE_DIR, 'models', 'player_multioutput_v2.pkl'), 'rb') as f:
         ml_model = pickle.load(f)
     print("✓ Loaded multi-output model")
 
-    with open('models/feature_names_v2.txt', 'r') as f:
+    with open(os.path.join(BASE_DIR, 'models', 'feature_names_v2.txt'), 'r') as f:
         feature_names = [line.strip() for line in f.readlines()]
     print(f"✓ Loaded {len(feature_names)} feature names")
 
-    with open('models/target_names_v2.txt', 'r') as f:
+    with open(os.path.join(BASE_DIR, 'models', 'target_names_v2.txt'), 'r') as f:
         target_names = [line.strip() for line in f.readlines()]
     print(f"✓ Loaded {len(target_names)} target names")
 
-    with open('models/model_metadata_v2.json', 'r') as f:
+    with open(os.path.join(BASE_DIR, 'models', 'model_metadata_v2.json'), 'r') as f:
         model_metadata = json.load(f)
     print(f"✓ Loaded model metadata (version {model_metadata.get('model_version')})")
+
+    # ── Load Injury Model ───────────────────────────────────────────────────
+    print("Loading injury classification model...")
+    try:
+        injury_model = joblib.load(os.path.join(BASE_DIR, 'models', 'injury_clf.pkl'))
+        print("✓ Loaded injury model")
+    except Exception as e:
+        print(f"⚠ Could not load injury_clf.pkl: {e}")
+        injury_model = None
 
     # ── Load pre-built SHAP TreeExplainers ────────────────────────────────────
     print("Loading SHAP explainers...")
     try:
-        with open('models/shap_explainers_v2.pkl', 'rb') as f:
+        with open(os.path.join(BASE_DIR, 'models', 'shap_explainers_v2.pkl'), 'rb') as f:
             shap_explainers = pickle.load(f)
         print(f"✓ Loaded {len(shap_explainers)} SHAP explainers")
     except Exception as e:
@@ -278,17 +300,87 @@ try:
     players_df = load_data_from_db()
 
     if players_df is not None:
+        # Load auxiliary data for trade analysis
+        print("Enriching player data with injury and team features...")
+        try:
+            injury_df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'processed', 'player_injury_score_2020_2025_cleaned.csv'))
+            team_df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'processed', 'team_features_temporal.csv'))
+            
+            # Normalize names for merging
+            players_df['normalized_name'] = players_df['player_name'].apply(normalize_name)
+            
+            # Group injury/team data to get latest stats
+            latest_injury = injury_df.sort_values(['Name', 'season']).groupby('Name').last().reset_index()
+            latest_injury['normalized_name'] = latest_injury['Name'].apply(normalize_name)
+            
+            # Select relevant injury features to merge
+            injury_features = [
+                'normalized_name', 'games_missed', 'games_missed_last_season', 
+                'total_days_missed', 'minor_count', 'moderate_count', 
+                'severe_count', 'has_severe_injury'
+            ]
+            
+            # Merge injury data
+            players_df = players_df.merge(
+                latest_injury[injury_features],
+                on='normalized_name',
+                how='left'
+            )
+            
+            # Fill missing values for players NOT in injury database (assume healthy)
+            for col in injury_features[1:]:
+                players_df[col] = players_df[col].fillna(0)
+            
+            # Prediction with injury model if available
+            if injury_model:
+                inj_feat_list = ['games_missed', 'games_missed_last_season', 'total_days_missed',
+                                'minor_count', 'moderate_count', 'severe_count', 'has_severe_injury']
+                players_df['injury_risk_prob'] = injury_model.predict_proba(players_df[inj_feat_list])[:, 1]
+                players_df['injury_risk_category'] = pd.cut(
+                    players_df['injury_risk_prob'],
+                    bins=[0, 0.3, 0.5, 0.7, 1.0],
+                    labels=['Low', 'Moderate', 'High', 'Very High']
+                ).astype(str)
+            else:
+                players_df['injury_risk_prob'] = 0.05
+                players_df['injury_risk_category'] = 'Low'
+
+            # --- MASS PERFORMANCE PREDICTIONS (Align with M2.ipynb) ---
+            print("Generating performance predictions for all players...")
+            try:
+                # Ensure all features exist, fill with 0 if missing
+                X_perf = players_df[feature_names].fillna(0)
+                perf_preds_all = ml_model.predict(X_perf.values)
+                
+                # Assign back to main dataframe
+                for i, target in enumerate(target_names):
+                    players_df[target] = perf_preds_all[:, i]
+                print(f"✓ Generated predictions for {len(players_df)} players across {len(target_names)} targets")
+            except Exception as e:
+                print(f"⚠ Failed to generate mass performance predictions: {e}")
+
+            # Pre-calculate medical scores
+            print("Pre-calculating medical scores...")
+            medical_results = players_df.apply(calculate_player_medical_score, axis=1)
+            players_df['medical_score'] = [m['medical_score'] for m in medical_results]
+            players_df['medical_grade'] = [m['medical_grade'] for m in medical_results]
+            
+            print("✓ Successfully enriched player data")
+        except Exception as e:
+            print(f"⚠ Failed to enrich player data: {e}. Trade analysis features may be limited.")
+
         latest_season = players_df['season'].max()
         print(f"✓ Loaded {len(players_df)} player-season records")
         print(f"✓ Latest season detected: {latest_season}")
         model_loaded = True
     else:
         model_loaded = False
+        injury_model = None
 
     # ── Load 2025-26 team overrides ───────────────────────────────────────────
     # The ML model uses 2024-25 stats for predictions, but the TEAM shown in
     # the UI must reflect where each player plays RIGHT NOW in 2025-26.
-    TEAM_OVERRIDES_PATH = 'data/team_overrides_2025_26.json'
+    TEAM_OVERRIDES_PATH = os.path.join(BASE_DIR, 'data', 'team_overrides_2025_26.json')
     team_overrides = {}
     try:
         with open(TEAM_OVERRIDES_PATH, 'r', encoding='utf-8') as f:
@@ -634,6 +726,10 @@ def predict():
             'confidence_ranges':  confidence_ranges,
             'shap_explanation':   shap_explanation,
             'model_version':      model_metadata.get('model_version', 'v2'),
+            'injury_risk_prob':   float(latest.get('injury_risk_prob', 0.05)),
+            'injury_risk_category': str(latest.get('injury_risk_category', 'Low')),
+            'medical_score':      float(latest.get('medical_score', 0)),
+            'medical_grade':      str(latest.get('medical_grade', 'N/A')),
         }
 
         return jsonify(response)
@@ -642,19 +738,162 @@ def predict():
         return jsonify({'error': f'Prediction failed: {str(e)}'}), 500
 
 
-@app.route('/api/model/info', methods=['GET'])
-def model_info():
+@app.route('/api/trade/evaluate', methods=['POST'])
+def evaluate_trade():
+    """
+    Evaluate a trade between two teams.
+    Expected JSON: 
+    {
+      "team_a": "LAL",
+      "team_b": "GSW",
+      "sent_a": ["LeBron James"],
+      "sent_b": ["Stephen Curry"]
+    }
+    """
     if not model_loaded:
         return jsonify({'error': 'Model not loaded'}), 503
 
+    data = request.get_json()
+    team_a_code = data.get('team_a')
+    team_b_code = data.get('team_b')
+    sent_a_names = data.get('sent_a', [])
+    sent_b_names = data.get('sent_b', [])
+
+    if not team_a_code or not team_b_code:
+        return jsonify({'error': 'Team codes are required'}), 400
+
+    # Get full rosters for both teams (from latest data)
+    season_data = get_latest_season_data()
+    if season_data is None:
+        return jsonify({'error': 'No season data available'}), 500
+
+    # Rosters for simulation
+    roster_a = season_data[season_data['team'] == team_a_code].copy()
+    roster_b = season_data[season_data['team'] == team_b_code].copy()
+
+    if roster_a.empty or roster_b.empty:
+        return jsonify({'error': 'One or both team rosters not found'}), 404
+
+    # Normalize outgoing names for matching
+    sent_a_norm = [normalize_name(n) for n in sent_a_names]
+    sent_b_norm = [normalize_name(n) for n in sent_b_names]
+
+    # Split players
+    traded_from_a = roster_a[roster_a['normalized_name'].isin(sent_a_norm)]
+    traded_from_b = roster_b[roster_b['normalized_name'].isin(sent_b_norm)]
+
+    # New rosters
+    post_a = pd.concat([roster_a[~roster_a['normalized_name'].isin(sent_a_norm)], traded_from_b])
+    post_b = pd.concat([roster_b[~roster_b['normalized_name'].isin(sent_b_norm)], traded_from_a])
+
+    # 1. Health Analysis
+    pre_health_a = calculate_roster_health_score(roster_a)
+    post_health_a = calculate_roster_health_score(post_a)
+    pre_health_b = calculate_roster_health_score(roster_b)
+    post_health_b = calculate_roster_health_score(post_b)
+
+    # 2. Win Simulation
+    print(f"Simulating trade impact for {team_a_code} and {team_b_code}...")
+    pre_wins_a = run_injury_adjusted_simulation(roster_a, n_sims=500)
+    post_wins_a = run_injury_adjusted_simulation(post_a, n_sims=500)
+    pre_wins_b = run_injury_adjusted_simulation(roster_b, n_sims=500)
+    post_wins_b = run_injury_adjusted_simulation(post_b, n_sims=500)
+
+    # 3. Metrics Calculation
+    delta_a = float(post_wins_a.mean() - pre_wins_a.mean())
+    delta_b = float(post_wins_b.mean() - pre_wins_b.mean())
+
+    # Playoffs
+    from services.trade_analyzer import wins_to_playoff_prob
+    playoff_ch_a = wins_to_playoff_prob(post_wins_a.mean()) - wins_to_playoff_prob(pre_wins_a.mean())
+    playoff_ch_b = wins_to_playoff_prob(post_wins_b.mean()) - wins_to_playoff_prob(pre_wins_b.mean())
+
+    # Risk/Medical changes
+    inj_ch_a = float(traded_from_b['injury_risk_prob'].mean() - traded_from_a['injury_risk_prob'].mean()) if not traded_from_a.empty and not traded_from_b.empty else 0
+    med_ch_a = float(traded_from_b['medical_score'].mean() - traded_from_a['medical_score'].mean()) if not traded_from_a.empty and not traded_from_b.empty else 0
+    
+    # Calculate scores
+    score_a = calc_trade_score(delta_a, float(playoff_ch_a), inj_ch_a, 
+                              post_health_a['roster_health_score'] - pre_health_a['roster_health_score'],
+                              med_ch_a)
+    score_b = calc_trade_score(delta_b, float(playoff_ch_b), -inj_ch_a, 
+                              post_health_b['roster_health_score'] - pre_health_b['roster_health_score'],
+                              -med_ch_a)
+
+    # Result response
+    result = {
+        "traded_players": {
+            "from_a": traded_from_a[['player_name', 'points_per_game', 'injury_risk_prob', 'medical_score', 'medical_grade']].to_dict('records'),
+            "from_b": traded_from_b[['player_name', 'points_per_game', 'injury_risk_prob', 'medical_score', 'medical_grade']].to_dict('records')
+        },
+        "team_a": {
+            "code": team_a_code,
+            "pre_wins": round(float(pre_wins_a.mean()), 2),
+            "post_wins": round(float(post_wins_a.mean()), 2),
+            "win_change": round(delta_a, 2),
+            "win_ci": [round(float(np.percentile(post_wins_a - pre_wins_a, 5)), 2), 
+                       round(float(np.percentile(post_wins_a - pre_wins_a, 95)), 2)],
+            "playoff_change": round(float(playoff_ch_a) * 100, 1),
+            "health_score_pre": pre_health_a['roster_health_score'],
+            "health_score_post": post_health_a['roster_health_score'],
+            "health_grade_post": post_health_a['health_grade'],
+            "health_change": round(post_health_a['roster_health_score'] - pre_health_a['roster_health_score'], 1),
+            "injury_risk_change": round(inj_ch_a * 100, 2),
+            "medical_change": round(med_ch_a, 1),
+            "grade": get_trade_rating(score_a),
+            "score": round(score_a, 1)
+        },
+        "team_b": {
+            "code": team_b_code,
+            "pre_wins": round(float(pre_wins_b.mean()), 2),
+            "post_wins": round(float(post_wins_b.mean()), 2),
+            "win_change": round(delta_b, 2),
+            "win_ci": [round(float(np.percentile(post_wins_b - pre_wins_b, 5)), 2), 
+                       round(float(np.percentile(post_wins_b - pre_wins_b, 95)), 2)],
+            "playoff_change": round(float(playoff_ch_b) * 100, 1),
+            "health_score_pre": pre_health_b['roster_health_score'],
+            "health_score_post": post_health_b['roster_health_score'],
+            "health_grade_post": post_health_b['health_grade'],
+            "health_change": round(post_health_b['roster_health_score'] - pre_health_b['roster_health_score'], 1),
+            "injury_risk_change": round(-inj_ch_a * 100, 2),
+            "medical_change": round(-med_ch_a, 1),
+            "grade": get_trade_rating(score_b),
+            "score": round(score_b, 1)
+        },
+        "assessment": {
+            "fairness": round(100 - abs(score_a - score_b), 1),
+            "combined_quality": round((score_a + score_b) / 2, 1),
+            "classification": f"{'FAIR' if abs(score_a - score_b) < 10 else 'ONE-SIDED'} & {get_trade_rating((score_a+score_b)/2)}",
+            "winner": team_a_code if delta_a > delta_b else team_b_code,
+            "win_margin": round(abs(delta_a - delta_b), 1)
+        }
+    }
+
+    return jsonify(result)
+
+@app.route('/api/roster/<team_code>', methods=['GET'])
+def get_team_roster(team_code):
+    if not model_loaded:
+        return jsonify({'error': 'Model not loaded'}), 503
+
+    season_data = get_latest_season_data()
+    if season_data is None:
+        return jsonify({'error': 'No data available'}), 500
+
+    roster = season_data[season_data['team'] == team_code].sort_values('points_per_game', ascending=False)
+    
+    players = roster[[
+        'player_name', 'position', 'age', 'points_per_game', 
+        'rebounds_per_game', 'assists_per_game', 'injury_risk_category', 'medical_grade'
+    ]].to_dict('records')
+    
+    # Calculate team-level metrics
+    health = calculate_roster_health_score(roster)
+    
     return jsonify({
-        'metadata': model_metadata,
-        'feature_count': len(feature_names),
-        'target_count': len(target_names),
-        'latest_season': latest_season,
-        'sample_features': feature_names[:10],
-        'target_names': target_names,
-        'shap_coverage': list(shap_explainers.keys()),
+        "team": team_code,
+        "players": players,
+        "roster_health": health
     })
 
 

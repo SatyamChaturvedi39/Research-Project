@@ -7,6 +7,35 @@ let allTeams = [];
 let currentPlayers = {};
 
 // ============================================================================
+// Theme Management
+// ============================================================================
+
+function initTheme() {
+    const themeBtn = document.getElementById('theme-toggle');
+    const currentTheme = localStorage.getItem('theme') || 'dark';
+
+    if (currentTheme === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        if (themeBtn) themeBtn.textContent = '☀️';
+    }
+
+    if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            let theme = document.documentElement.getAttribute('data-theme');
+            if (theme === 'light') {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'dark');
+                themeBtn.textContent = '🌙';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+                themeBtn.textContent = '☀️';
+            }
+        });
+    }
+}
+
+// ============================================================================
 // Mobile Navigation
 // ============================================================================
 
@@ -568,6 +597,7 @@ function updateTradeAnalysis(score, d) {
 // ============================================================================
 
 window.addEventListener('DOMContentLoaded', async () => {
+    initTheme();
     try {
         // Check health
         const healthRes = await fetch('/api/health');
