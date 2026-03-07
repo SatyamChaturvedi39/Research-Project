@@ -50,6 +50,33 @@
     /* red — negative SHAP in light mode */
 }
 
+/* ========================================
+   M3 SALARY CAP INTEGRATION STYLES
+   ======================================== */
+.pc-salary-info {
+    font-size: 11px;
+    color: var(--color-accent-gold);
+    margin: 10px 0 4px 0;
+    padding: 8px 12px;
+    background: rgba(255, 215, 0, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    letter-spacing: 0.3px;
+}
+
+.pc-salary-info strong {
+    color: #fff;
+    font-weight: 800;
+}
+
+.oc-value-financial {
+    font-family: var(--font-family);
+    letter-spacing: -0.5px;
+}
+
 
 
 html {

@@ -11,11 +11,18 @@ const ResultsDashboard = ({ data }) => {
 
     const targetScore = data.team_a.score;
 
-    // Playoff Probability Formula from script.js
+    // Playoff Probability Formula — mirrors backend wins_to_playoff_prob()
+    // Backend: if wins >= 42: clip((wins-42)*0.05 + 0.5, 0.5, 1.0)
+    //          else:          clip(0.5 - (42-wins)*0.05, 0.0, 0.5)
     const getPlayoffProb = (wins) => {
-        return wins >= 42
-            ? Math.min(99.9, 50 + (wins - 42) * 10).toFixed(1)
-            : Math.max(0.1, 40 - (42 - wins) * 10).toFixed(1);
+        let prob;
+        if (wins >= 42) {
+            prob = Math.min(1.0, (wins - 42) * 0.05 + 0.5);
+        } else {
+            prob = Math.max(0.0, 0.5 - (42 - wins) * 0.05);
+        }
+        // Convert to percentage, clamp to [0.1, 99.9] to avoid absolute extremes
+        return Math.min(99.9, Math.max(0.1, prob * 100)).toFixed(1);
     };
 
     useGSAP(() => {
@@ -84,7 +91,7 @@ const ResultsDashboard = ({ data }) => {
 
                 <div className="flex justify-between items-center text-sm mt-2">
                     <span className="text-slate-400">Injury Risk</span>
-                    {formatDelta(-teamData.injury_risk_change, '%', true)}
+                    {formatDelta(teamData.injury_risk_change, '%', true)}
                 </div>
                 <div className="flex justify-between items-center text-sm">
                     <span className="text-slate-400">Roster Health</span>

@@ -348,8 +348,9 @@ async function addPlayerToTrade(playerName, type) {
                 </div>
             </div>
 
-            ${ppgConf ? `<div class="pc-range">Consistency Range: <span>${confRange}</span></div>` : ''}
+            <div class="pc-range">Consistency Range: <span>${confRange}</span></div>
             <div class="pc-medical-info">Injury Probability: <strong>${(p.injury_risk_prob * 100).toFixed(1)}%</strong></div>
+            <div class="pc-salary-info">Salary: <strong>$${(p.salary / 1e6).toFixed(1)}M</strong> · <strong>${p.years_remaining} yrs</strong></div>
 
             ${shapHTML}
 
@@ -463,6 +464,7 @@ async function analyzeTrade() {
     dashboard.scrollIntoView({ behavior: 'smooth' });
 
     // Reset placeholders
+    document.getElementById('analytical-dashboard').style.display = 'none';
     document.getElementById('score-value').textContent = '…';
     document.getElementById('fairness-value').textContent = '…';
 
@@ -515,6 +517,10 @@ function renderTradeEvaluation(data) {
     document.getElementById('oc-grade-a').textContent = data.team_a.grade;
     setGradeColor('oc-grade-a', data.team_a.grade);
 
+    // Financial A
+    document.getElementById('oc-salary-total-a').textContent = `$${data.team_a.salary_in.toFixed(1)}M`;
+    setDelta('oc-salary-delta-a', data.team_a.salary_delta, 'M', true); // More spending is "red" by default in setDelta(true)
+
     // 3. Metrics for Team B
     animateValue('oc-wins-b', 0, data.team_b.post_wins, 1);
     setDelta('oc-delta-b', data.team_b.win_change, 'wins');
@@ -529,6 +535,10 @@ function renderTradeEvaluation(data) {
 
     document.getElementById('oc-grade-b').textContent = data.team_b.grade;
     setGradeColor('oc-grade-b', data.team_b.grade);
+
+    // Financial B
+    document.getElementById('oc-salary-total-b').textContent = `$${data.team_b.salary_in.toFixed(1)}M`;
+    setDelta('oc-salary-delta-b', data.team_b.salary_delta, 'M', true);
 
     // 4. Fairness & Quality
     document.getElementById('fairness-value').textContent = data.assessment.fairness + '%';
@@ -567,6 +577,16 @@ function renderTradeEvaluation(data) {
     detailWrap.innerHTML = sentences.map((s, i) => `
         <p class="explanation-sentence${i === 0 ? ' lead' : ''}">${s}</p>
     `).join('');
+
+    // 9. Analytical Chart
+    const dashboard = document.getElementById('analytical-dashboard');
+    const chartImg = document.getElementById('trade-analysis-chart');
+    if (data.chart_url) {
+        chartImg.src = data.chart_url;
+        dashboard.style.display = 'block';
+    } else {
+        dashboard.style.display = 'none';
+    }
 }
 
 function renderTradedPlayers(players) {
@@ -576,7 +596,7 @@ function renderTradedPlayers(players) {
     const buildMiniItem = (p) => `
         <div class="tp-mini-item">
             <div class="tp-mini-name">${p.player_name}</div>
-            <div class="tp-mini-stats">${p.points_per_game.toFixed(1)} PPG · ${(p.injury_risk_prob * 100).toFixed(1)}% Risk · <span class="med-text">${p.medical_grade}</span></div>
+            <div class="tp-mini-stats">${p.points_per_game.toFixed(1)} PPG · $${(p.salary / 1e6).toFixed(1)}M Salary · <span class="med-text">${p.medical_grade}</span></div>
         </div>
     `;
 
