@@ -1,6 +1,7 @@
 ﻿"""
 NBA Trade Analyzer - Production Flask Backend
 With industry-standard SHAP explainability (per-target TreeExplainer)
+# HOTRELOAD 4
 """
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
@@ -131,6 +132,7 @@ def _fmt_value(feature, value):
         return f"{value:.3f}"
     return f"{value:.1f}"
 
+
 def _build_reason(feature, value, shap_val, target_key, current_age=None):
     """Build a plain-English fan-friendly reason sentence for a SHAP factor."""
     label = FEATURE_LABEL_MAP.get(feature, feature.replace('_', ' ').title())
@@ -224,7 +226,7 @@ def load_data_from_db():
         collection = db[COLLECTION_NAME]
 
         if collection.count_documents({}) == 0:
-            print("⚠ MongoDB is empty. Falling back to CSV.")
+            print("[WARN] MongoDB is empty. Falling back to CSV.")
             return pd.read_csv('data/processed/player_features_v2_temporal.csv')
 
         print("Fetching documents from MongoDB...")
@@ -239,17 +241,17 @@ def load_data_from_db():
                 flattened_rows.append(s)
 
         df = pd.DataFrame(flattened_rows)
-        print(f"✓ Successfully loaded {len(df)} rows from MongoDB")
+        print(f"[OK] Successfully loaded {len(df)} rows from MongoDB")
         client.close()
         return df
 
     except Exception as e:
-        print(f"⚠ Database connection failed: {e}")
+        print(f"[WARN] Database connection failed: {e}")
         print("Falling back to local CSV file...")
         try:
             return pd.read_csv('data/processed/player_features_v2_temporal.csv')
         except Exception:
-            print("❌ Critical: Could not load data from DB or CSV")
+            print("[ERROR] Critical: Could not load data from DB or CSV")
             return None
 
 
@@ -263,27 +265,27 @@ print("Loading ML model and artifacts...")
 try:
     with open(os.path.join(BASE_DIR, 'models', 'player_multioutput_v2.pkl'), 'rb') as f:
         ml_model = pickle.load(f)
-    print("✓ Loaded multi-output model")
+    print("[OK] Loaded multi-output model")
 
     with open(os.path.join(BASE_DIR, 'models', 'feature_names_v2.txt'), 'r') as f:
         feature_names = [line.strip() for line in f.readlines()]
-    print(f"✓ Loaded {len(feature_names)} feature names")
+    print(f"[OK] Loaded {len(feature_names)} feature names")
 
     with open(os.path.join(BASE_DIR, 'models', 'target_names_v2.txt'), 'r') as f:
         target_names = [line.strip() for line in f.readlines()]
-    print(f"✓ Loaded {len(target_names)} target names")
+    print(f"[OK] Loaded {len(target_names)} target names")
 
     with open(os.path.join(BASE_DIR, 'models', 'model_metadata_v2.json'), 'r') as f:
         model_metadata = json.load(f)
-    print(f"✓ Loaded model metadata (version {model_metadata.get('model_version')})")
+    print(f"[OK] Loaded model metadata (version {model_metadata.get('model_version')})")
 
     # ── Load Injury Model ───────────────────────────────────────────────────
     print("Loading injury classification model...")
     try:
         injury_model = joblib.load(os.path.join(BASE_DIR, 'models', 'injury_clf.pkl'))
-        print("✓ Loaded injury model")
+        print("[OK] Loaded injury model")
     except Exception as e:
-        print(f"⚠ Could not load injury_clf.pkl: {e}")
+        print(f"[WARN] Could not load injury_clf.pkl: {e}")
         injury_model = None
 
     # ── Load pre-built SHAP TreeExplainers ────────────────────────────────────
@@ -291,9 +293,9 @@ try:
     try:
         with open(os.path.join(BASE_DIR, 'models', 'shap_explainers_v2.pkl'), 'rb') as f:
             shap_explainers = pickle.load(f)
-        print(f"✓ Loaded {len(shap_explainers)} SHAP explainers")
+        print(f"[OK] Loaded {len(shap_explainers)} SHAP explainers")
     except Exception as e:
-        print(f"⚠ Could not load shap_explainers_v2.pkl. Please run the notebook builder. Error: {e}")
+        print(f"[WARN] Could not load shap_explainers_v2.pkl. Please run the notebook builder. Error: {e}")
         shap_explainers = {}
 
     # ── Load player data ──────────────────────────────────────────────────────
@@ -335,7 +337,26 @@ try:
             if injury_model:
                 inj_feat_list = ['games_missed', 'games_missed_last_season', 'total_days_missed',
                                 'minor_count', 'moderate_count', 'severe_count', 'has_severe_injury']
-                players_df['injury_risk_prob'] = injury_model.predict_proba(players_df[inj_feat_list])[:, 1]
+                try:
+                    players_df['injury_risk_prob'] = injury_model.predict_proba(players_df[inj_feat_list])[:, 1]
+                except AttributeError as e:
+                    # Fix Scikit-Learn 1.5 vs 1.8 version mismatches with LogisticRegression
+                    # Some pickled models lose the multi_class attribute down-level. We dummy the feature.
+                    print(f"[WARN] Handling Scikit-Learn Version Mismatch: {e}")
+                    import warnings
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        # Hack to inject the missing attribute into the local object instance
+                        if hasattr(injury_model, 'named_steps'):
+                            # It's a pipeline
+                            classifier = injury_model.named_steps.get('classifier') or injury_model.steps[-1][1]
+                            if not hasattr(classifier, 'multi_class'):
+                                classifier.multi_class = 'auto'
+                        elif not hasattr(injury_model, 'multi_class'):
+                            injury_model.multi_class = 'auto'
+                        
+                        players_df['injury_risk_prob'] = injury_model.predict_proba(players_df[inj_feat_list])[:, 1]
+                        
                 players_df['injury_risk_category'] = pd.cut(
                     players_df['injury_risk_prob'],
                     bins=[0, 0.3, 0.5, 0.7, 1.0],
@@ -355,9 +376,9 @@ try:
                 # Assign back to main dataframe
                 for i, target in enumerate(target_names):
                     players_df[target] = perf_preds_all[:, i]
-                print(f"✓ Generated predictions for {len(players_df)} players across {len(target_names)} targets")
+                print(f"[OK] Generated predictions for {len(players_df)} players across {len(target_names)} targets")
             except Exception as e:
-                print(f"⚠ Failed to generate mass performance predictions: {e}")
+                print(f"[WARN] Failed to generate mass performance predictions: {e}")
 
             # Pre-calculate medical scores
             print("Pre-calculating medical scores...")
@@ -365,13 +386,13 @@ try:
             players_df['medical_score'] = [m['medical_score'] for m in medical_results]
             players_df['medical_grade'] = [m['medical_grade'] for m in medical_results]
             
-            print("✓ Successfully enriched player data")
+            print("[OK] Successfully enriched player data")
         except Exception as e:
-            print(f"⚠ Failed to enrich player data: {e}. Trade analysis features may be limited.")
+            print(f"[WARN] Failed to enrich player data: {e}. Trade analysis features may be limited.")
 
         latest_season = players_df['season'].max()
-        print(f"✓ Loaded {len(players_df)} player-season records")
-        print(f"✓ Latest season detected: {latest_season}")
+        print(f"[OK] Loaded {len(players_df)} player-season records")
+        print(f"[OK] Latest season detected: {latest_season}")
         model_loaded = True
     else:
         model_loaded = False
@@ -386,14 +407,14 @@ try:
         with open(TEAM_OVERRIDES_PATH, 'r', encoding='utf-8') as f:
             overrides_data = json.load(f)
         team_overrides = overrides_data.get('overrides', {})
-        print(f"✓ Loaded {len(team_overrides)} team overrides for 2025-26 season")
+        print(f"[OK] Loaded {len(team_overrides)} team overrides for 2025-26 season")
     except FileNotFoundError:
-        print(f"⚠ No team overrides file found at {TEAM_OVERRIDES_PATH}")
+        print(f"[WARN] No team overrides file found at {TEAM_OVERRIDES_PATH}")
     except Exception as e:
-        print(f"⚠ Error loading team overrides: {e}")
+        print(f"[WARN] Error loading team overrides: {e}")
 
 except Exception as e:
-    print(f"❌ Error loading model: {str(e)}  (app runs in demo mode)")
+    print(f"[ERROR] Error loading model: {str(e)}  (app runs in demo mode)")
     ml_model = None
     shap_explainers = {}
     feature_names = []
@@ -803,14 +824,34 @@ def evaluate_trade():
     delta_a = float(post_wins_a.mean() - pre_wins_a.mean())
     delta_b = float(post_wins_b.mean() - pre_wins_b.mean())
 
-    # Playoffs
-    from services.trade_analyzer import wins_to_playoff_prob
+    # Playoffs & Fit
+    from services.trade_analyzer import wins_to_playoff_prob, calculate_fit_penalty
     playoff_ch_a = wins_to_playoff_prob(post_wins_a.mean()) - wins_to_playoff_prob(pre_wins_a.mean())
     playoff_ch_b = wins_to_playoff_prob(post_wins_b.mean()) - wins_to_playoff_prob(pre_wins_b.mean())
+    
+    pre_penalty_a, pre_reasons_a = calculate_fit_penalty(roster_a)
+    post_penalty_a, post_reasons_a = calculate_fit_penalty(post_a)
+    pre_penalty_b, pre_reasons_b = calculate_fit_penalty(roster_b)
+    post_penalty_b, post_reasons_b = calculate_fit_penalty(post_b)
+
+    new_reasons_a = [r for r in post_reasons_a if r not in pre_reasons_a]
+    new_reasons_b = [r for r in post_reasons_b if r not in pre_reasons_b]
 
     # Risk/Medical changes
-    inj_ch_a = float(traded_from_b['injury_risk_prob'].mean() - traded_from_a['injury_risk_prob'].mean()) if not traded_from_a.empty and not traded_from_b.empty else 0
-    med_ch_a = float(traded_from_b['medical_score'].mean() - traded_from_a['medical_score'].mean()) if not traded_from_a.empty and not traded_from_b.empty else 0
+    def get_mean_safely(df, col, default=0.0):
+        if df.empty: return default
+        if col in df.columns: return float(df[col].mean())
+        if col == 'injury_risk_prob': return 0.05
+        if col == 'medical_score': return 50.0
+        return default
+
+    mean_inj_b = get_mean_safely(traded_from_b, 'injury_risk_prob')
+    mean_inj_a = get_mean_safely(traded_from_a, 'injury_risk_prob')
+    inj_ch_a = mean_inj_b - mean_inj_a if (not traded_from_a.empty and not traded_from_b.empty) else 0.0
+    
+    mean_med_b = get_mean_safely(traded_from_b, 'medical_score')
+    mean_med_a = get_mean_safely(traded_from_a, 'medical_score')
+    med_ch_a = mean_med_b - mean_med_a if (not traded_from_a.empty and not traded_from_b.empty) else 0.0
     
     # Calculate scores
     score_a = calc_trade_score(delta_a, float(playoff_ch_a), inj_ch_a, 
@@ -820,11 +861,38 @@ def evaluate_trade():
                               post_health_b['roster_health_score'] - pre_health_b['roster_health_score'],
                               -med_ch_a)
 
+    # SHAP explanations for the biggest incoming pieces
+    def get_top_player_shap(traded_df):
+        if traded_df.empty: return None
+        try:
+            ppg_col = 'target_next_ppg' if 'target_next_ppg' in traded_df.columns else 'points_per_game'
+            top_player = traded_df.loc[traded_df[ppg_col].idxmax()]
+            
+            c_age = calculate_current_age(top_player['age'], latest_season) if 'age' in top_player else 25
+            _, _, shap_exp = _explain_predictions(top_player, ml_model, shap_explainers, feature_names, target_names, current_age=c_age)
+            
+            from app import _build_reason
+            reasons = [_build_reason(f, v, s, t, c_age) for f, s, t, v in shap_exp[:2]]
+            return {"name": top_player['player_name'], "reasons": reasons}
+        except Exception as e:
+            return None
+
+    shap_incoming_a = get_top_player_shap(traded_from_b)
+    shap_incoming_b = get_top_player_shap(traded_from_a)
+
+    # Safe select columns for traded players
+    def safe_cols(df):
+        cols = ['player_name', 'points_per_game']
+        if 'injury_risk_prob' in df.columns: cols.append('injury_risk_prob')
+        if 'medical_score' in df.columns: cols.append('medical_score')
+        if 'medical_grade' in df.columns: cols.append('medical_grade')
+        return df[cols].to_dict('records')
+
     # Result response
     result = {
         "traded_players": {
-            "from_a": traded_from_a[['player_name', 'points_per_game', 'injury_risk_prob', 'medical_score', 'medical_grade']].to_dict('records'),
-            "from_b": traded_from_b[['player_name', 'points_per_game', 'injury_risk_prob', 'medical_score', 'medical_grade']].to_dict('records')
+            "from_a": safe_cols(traded_from_a),
+            "from_b": safe_cols(traded_from_b)
         },
         "team_a": {
             "code": team_a_code,
@@ -862,10 +930,16 @@ def evaluate_trade():
         },
         "assessment": {
             "fairness": round(100 - abs(score_a - score_b), 1),
-            "combined_quality": round((score_a + score_b) / 2, 1),
-            "classification": f"{'FAIR' if abs(score_a - score_b) < 10 else 'ONE-SIDED'} & {get_trade_rating((score_a+score_b)/2)}",
             "winner": team_a_code if delta_a > delta_b else team_b_code,
-            "win_margin": round(abs(delta_a - delta_b), 1)
+            "win_margin": round(abs(delta_a - delta_b), 1),
+            "explanations": {
+                "fit_penalty_a_change": round(post_penalty_a - pre_penalty_a, 3),
+                "fit_penalty_b_change": round(post_penalty_b - pre_penalty_b, 3),
+                "fit_reasons_a": new_reasons_a,
+                "fit_reasons_b": new_reasons_b,
+                "shap_incoming_a": shap_incoming_a,
+                "shap_incoming_b": shap_incoming_b
+            }
         }
     }
 

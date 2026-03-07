@@ -189,24 +189,32 @@ def calculate_roster_health_score(roster):
     }
 
 def calculate_fit_penalty(roster):
-    """Position-based roster fit penalty."""
-    penalty = 0
+    """Position-based roster fit penalty with explicit reasoning."""
+    penalty = 0.0
+    reasons = []
     if 'position' not in roster.columns:
-        return 0
+        return penalty, reasons
         
     pos_counts = roster['position'].value_counts()
     
-    if pos_counts.get('PG', 0) > 3: penalty += 0.05
-    if pos_counts.get('C', 0) > 3: penalty += 0.03
-    if pos_counts.get('PG', 0) < 1: penalty += 0.08
+    if pos_counts.get('PG', 0) > 3: 
+        penalty += 0.05
+        reasons.append("Too many Point Guards (4+ restricts rotation depth)")
+    if pos_counts.get('C', 0) > 3: 
+        penalty += 0.03
+        reasons.append("Logjam at Center (4+ limits floor spacing and perimeter defense)")
+    if pos_counts.get('PG', 0) < 1: 
+        penalty += 0.08
+        reasons.append("Severe lack of Point Guards (No primary playmaker)")
     
     # Check for scoring cannibalization (too many high volume scorers)
     if 'target_next_ppg' in roster.columns:
         top_scorers = roster.nlargest(3, 'target_next_ppg')['target_next_ppg'].sum()
         if top_scorers > 75:
             penalty += 0.08
+            reasons.append("Scoring Cannibalization (Top 3 scorers demand too much usage, leading to diminishing returns)")
     
-    return penalty
+    return penalty, reasons
 
 def calculate_team_score(roster, sampled_stats):
     """Team quality score based on top 8 rotation players."""
@@ -218,14 +226,14 @@ def calculate_team_score(roster, sampled_stats):
     top_8_ppg = top_8[ppg_col].sum()
     efficiency = top_8[ts_col].mean() * 10
     
-    penalty = calculate_fit_penalty(roster)
+    penalty, _ = calculate_fit_penalty(roster)
     score = (top_8_ppg + efficiency) * (1 - penalty)
     
     return score
 
 def predict_wins(score):
-    """Convert team score to wins using regression-derived formula."""
-    wins = (score - 113.7) * 1.2 + 41
+    """Convert team score to wins using regression-derived formula. Recalibrated intercept for 2025 ML scoring environment."""
+    wins = (score - 92.5) * 1.5 + 41
     return np.clip(wins, 5, 75)
 
 def wins_to_playoff_prob(wins):
@@ -250,20 +258,25 @@ def run_injury_adjusted_simulation(roster, n_sims=1000):
     results = []
     
     # Pre-calculate common values
-    injury_probs = roster['injury_risk_prob'].fillna(0.05).values
+    injury_probs = roster.get('injury_risk_prob', pd.Series([0.05] * len(roster), index=roster.index)).fillna(0.05).values
     base_values = {col: roster[col].values for col in STD_DEVS if col in roster.columns}
     stds = {col: STD_DEVS[col] for col in STD_DEVS if col in roster.columns}
-    
+    # Create a deterministic seed based on roster composition
+    roster_hash_str = "".join(sorted(roster['player_name'].astype(str).tolist()))
+    import hashlib
+    seed = int(hashlib.md5(roster_hash_str.encode('utf-8')).hexdigest()[:8], 16)
+    rng = np.random.RandomState(seed)
+
     for _ in range(n_sims):
         sampled = roster.copy()
         
         # Sample from normal distributions for each player/stat
         for col, std in stds.items():
-            sampled[col] = np.maximum(0, np.random.normal(base_values[col], std))
+            sampled[col] = np.maximum(0, rng.normal(base_values[col], std))
         
         # Apply injury effects (stochastic)
         # 40-80% reduction in output if "injured" this season
-        random_draws = np.random.random(len(sampled))
+        random_draws = rng.random(len(sampled))
         injured_mask = random_draws < injury_probs
         
         # Random severity for each injured player

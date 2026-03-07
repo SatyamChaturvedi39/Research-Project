@@ -1,0 +1,127 @@
+import React, { useState, useEffect } from 'react';
+import { Loader2, PlusCircle, Users } from 'lucide-react';
+import { getPlayersByTeam } from '../api';
+
+const TeamPanel = ({ title, team, setTeam, otherTeam, allTeams, activePlayers, onAddPlayer }) => {
+    const [roster, setRoster] = useState([]);
+    const [isLoadingRoster, setIsLoadingRoster] = useState(false);
+    const [selectedPlayerName, setSelectedPlayerName] = useState("");
+
+    // Fetch players automatically when the Team changes
+    useEffect(() => {
+        if (!team) {
+            setRoster([]);
+            setSelectedPlayerName("");
+            return;
+        }
+
+        const fetchRoster = async () => {
+            setIsLoadingRoster(true);
+            try {
+                const data = await getPlayersByTeam(team);
+                setRoster(data.players || []);
+                setSelectedPlayerName(""); // reset dropdown
+            } catch (error) {
+                console.error("Failed to load roster:", error);
+                setRoster([]);
+            } finally {
+                setIsLoadingRoster(false);
+            }
+        };
+
+        fetchRoster();
+    }, [team]);
+
+    const handleAddClick = () => {
+        if (!selectedPlayerName) return;
+        const playerObj = roster.find(p => p.player_name === selectedPlayerName);
+        if (playerObj) {
+            onAddPlayer(playerObj);
+            setSelectedPlayerName(""); // clear selection after adding
+        }
+    };
+
+    const isPlayerAlreadyInTrade = (playerName) => {
+        return activePlayers.some(p => p.player_name === playerName);
+    };
+
+    return (
+        <div className="glass-panel p-6 flex flex-col gap-5 border border-slate-800">
+            <div className="flex justify-between items-center mb-1">
+                <h3 className="text-xl font-bold text-white tracking-wide">{title}</h3>
+                <div className="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-700/50">
+                    <Users className="w-4 h-4 text-orange-400" />
+                    <select
+                        className="bg-transparent text-white font-medium focus:outline-none focus:ring-0 appearance-none cursor-pointer"
+                        value={team}
+                        onChange={(e) => setTeam(e.target.value)}
+                    >
+                        <option value="" className="bg-slate-900 text-slate-400">Select Franchise...</option>
+                        {allTeams.map(t => (
+                            <option
+                                key={t.code}
+                                value={t.code}
+                                disabled={t.code === otherTeam}
+                                className="bg-slate-900 text-white"
+                            >
+                                {t.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-2 relative z-10">
+                <label className="text-xs uppercase font-bold text-slate-500 tracking-wider">Select Player from Roster</label>
+                <div className="flex gap-3">
+                    <div className="relative flex-1">
+                        <select
+                            className="w-full bg-slate-900/80 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 appearance-none focus:outline-none focus:border-orange-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            value={selectedPlayerName}
+                            onChange={(e) => setSelectedPlayerName(e.target.value)}
+                            disabled={!team || isLoadingRoster}
+                        >
+                            {!team ? (
+                                <option value="">Select a team first...</option>
+                            ) : isLoadingRoster ? (
+                                <option value="">Loading roster...</option>
+                            ) : roster.length === 0 ? (
+                                <option value="">No players found</option>
+                            ) : (
+                                <>
+                                    <option value="" disabled>Choose a player to trade...</option>
+                                    {roster.map(p => {
+                                        const isAdded = isPlayerAlreadyInTrade(p.player_name);
+                                        return (
+                                            <option
+                                                key={p.player_name}
+                                                value={p.player_name}
+                                                disabled={isAdded}
+                                                className="bg-slate-900"
+                                            >
+                                                {p.player_name} {isAdded ? '(Already in Trade)' : `(${p.points_per_game.toFixed(1)} PPG)`}
+                                            </option>
+                                        );
+                                    })}
+                                </>
+                            )}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-400">
+                            {isLoadingRoster ? <Loader2 className="w-4 h-4 animate-spin text-orange-500" /> : "▼"}
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={handleAddClick}
+                        disabled={!selectedPlayerName}
+                        className="px-6 py-3 bg-slate-800 hover:bg-orange-600 border border-slate-700 hover:border-orange-500 text-white rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-slate-800 disabled:hover:border-slate-700 flex items-center justify-center gap-2 font-bold shadow-lg"
+                    >
+                        <PlusCircle className="w-5 h-5" /> Add
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default TeamPanel;

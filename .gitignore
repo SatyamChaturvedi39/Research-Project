@@ -35,3 +35,9 @@ desktop.ini
 # Temporary files
 *.log
 *.tmp
+
+# Node & React
+node_modules/
+dist/
+dist-ssr/
+*.local
