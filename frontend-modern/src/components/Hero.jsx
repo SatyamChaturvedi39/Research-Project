@@ -15,7 +15,7 @@ const Hero = () => {
                         ML-Powered Analytics
                     </div>
                     <h1 className="text-6xl md:text-8xl font-black leading-[0.95] text-white">
-                        Predict Trade<br />Performance
+                        Predict NBA Trade<br />Performance
                     </h1>
                     <p className="text-slate-400 text-lg md:text-xl max-w-xl leading-relaxed">
                         Multi-output XGBoost models trained on 54 temporal features from 5 seasons of NBA data,
