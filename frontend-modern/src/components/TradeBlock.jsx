@@ -105,7 +105,7 @@ const PlayerCard = ({ p, onRemove }) => {
                 </div>
                 <div className="flex flex-col items-center justify-center p-3 relative group/stat cursor-default">
                     <div className="absolute inset-0 bg-orange-500/5 shadow-[0_0_15px_rgba(249,115,22,0.1)] rounded-lg pointer-events-none"></div>
-                    <span className="text-3xl font-black text-white relative z-10">{p.predictions?.target_next_ppg?.toFixed(1) || '--'}</span>
+                    <span className="text-3xl font-black text-white relative z-10">{p.predictions?.ppg?.toFixed(1) || '--'}</span>
                     <span className="text-[10px] text-orange-400 uppercase font-bold tracking-wider relative z-10 mt-1">Pred PPG</span>
                 </div>
                 <div className="flex flex-col">
@@ -133,12 +133,9 @@ const PlayerCard = ({ p, onRemove }) => {
                 <div className="border-t border-slate-800/80 bg-[#0f172a]">
                     <button
                         onClick={() => setShowShap(!showShap)}
-                        className="w-full flex justify-between items-center px-5 py-3 text-xs uppercase font-bold text-slate-400 tracking-wider hover:bg-slate-800/50 transition-colors"
+                        className="w-full flex justify-between items-center px-5 py-3 text-[10px] uppercase font-bold text-slate-500 tracking-widest hover:bg-slate-800/50 transition-colors"
                     >
-                        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 px-1">
-                            <span><span className="text-orange-300 mr-2">🤖</span> AI Reasoning Factors</span>
-                            <span className="text-slate-600">SHAP values</span>
-                        </div>
+                        <span><span className="text-orange-300 mr-2">🤖</span> AI Reasoning Factors</span>
                         {showShap ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                     <AnimatePresence>
