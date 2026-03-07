@@ -119,57 +119,6 @@ const About = () => {
                     </div>
                 </motion.aside>
             </div>
-
-            {/* SDG Goals Section */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="space-y-8"
-            >
-                <div className="text-center space-y-3">
-                    <div className="text-orange-400 font-bold tracking-[0.2em] uppercase text-sm">United Nations</div>
-                    <h2 className="text-4xl md:text-5xl font-black">Sustainable Development Goals</h2>
-                    <p className="text-slate-400 max-w-2xl mx-auto text-base">
-                        This project aligns with the following UN SDGs by applying data science to advance fair, healthy, and innovative outcomes in professional sports.
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {SDG_GOALS.map((goal, i) => (
-                        <motion.div
-                            key={goal.number}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.7 + i * 0.08 }}
-                            className={`glass-panel p-6 border-l-4 ${goal.borderColor} bg-slate-900/40 space-y-3 hover:bg-slate-800/50 transition-colors`}
-                        >
-                            {/* SDG Header */}
-                            <div className="flex items-center gap-3">
-                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${goal.color} flex items-center justify-center text-2xl font-black text-white shadow-lg flex-shrink-0`}>
-                                    {goal.number}
-                                </div>
-                                <div>
-                                    <div className="text-[10px] uppercase tracking-wider text-slate-500 font-black">SDG {goal.number}</div>
-                                    <h3 className={`text-base font-black ${goal.textColor} leading-tight`}>{goal.title}</h3>
-                                </div>
-                            </div>
-
-                            {/* Relevance */}
-                            <p className="text-slate-400 text-sm leading-relaxed">
-                                {goal.relevance}
-                            </p>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* SDG Disclaimer */}
-                <div className="text-center">
-                    <p className="text-xs text-slate-600 max-w-2xl mx-auto">
-                        The United Nations Sustainable Development Goals (SDGs) are 17 global goals adopted in 2015 as a call to action to end poverty, protect the planet, and ensure that by 2030 all people enjoy peace and prosperity.
-                    </p>
-                </div>
-            </motion.div>
         </div>
     );
 };
