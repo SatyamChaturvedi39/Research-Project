@@ -1,4 +1,4 @@
-﻿"""
+"""
 NBA Trade Analyzer - Production Flask Backend
 With industry-standard SHAP explainability (per-target TreeExplainer)
 # HOTRELOAD 4
@@ -32,9 +32,7 @@ load_dotenv()
 # ============================================================================
 # App Configuration
 # ============================================================================
-app = Flask(__name__,
-            template_folder='frontend/templates',
-            static_folder='frontend/static')
+app = Flask(__name__)
 
 CORS(app)
 
@@ -305,8 +303,32 @@ try:
         # Load auxiliary data for trade analysis
         print("Enriching player data with injury and team features...")
         try:
-            injury_df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'processed', 'player_injury_score_2020_2025_cleaned.csv'))
-            team_df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'processed', 'team_features_temporal.csv'))
+            try:
+                from pymongo import MongoClient
+                client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+                db = client[DATABASE_NAME]
+                
+                # Fetch Injuries
+                if 'injuries' in db.list_collection_names() and db['injuries'].count_documents({}) > 0:
+                    print("Fetching injuries from MongoDB...")
+                    injury_df = pd.DataFrame(list(db['injuries'].find({})))
+                else:
+                    print("Falling back to local injuries CSV...")
+                    injury_df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'processed', 'player_injury_score_2020_2025_cleaned.csv'))
+                
+                # Fetch Teams
+                if 'teams' in db.list_collection_names() and db['teams'].count_documents({}) > 0:
+                    print("Fetching teams from MongoDB...")
+                    team_df = pd.DataFrame(list(db['teams'].find({})))
+                else:
+                    print("Falling back to local teams CSV...")
+                    team_df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'processed', 'team_features_temporal.csv'))
+                
+                client.close()
+            except Exception as dbe:
+                print(f"[WARN] Failed to fetch auxiliary data from MongoDB: {dbe}. Falling back to CSVs.")
+                injury_df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'processed', 'player_injury_score_2020_2025_cleaned.csv'))
+                team_df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'processed', 'team_features_temporal.csv'))
             
             # Normalize names for merging
             players_df['normalized_name'] = players_df['player_name'].apply(normalize_name)

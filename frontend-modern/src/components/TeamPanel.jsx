@@ -46,13 +46,13 @@ const TeamPanel = ({ title, team, setTeam, otherTeam, allTeams, activePlayers, o
     };
 
     return (
-        <div className="glass-panel p-6 flex flex-col gap-5 border border-slate-800">
-            <div className="flex justify-between items-center mb-1">
+        <div className="glass-panel p-4 md:p-6 flex flex-col gap-4 md:gap-5 border border-slate-800">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-1">
                 <h3 className="text-xl font-bold text-white tracking-wide">{title}</h3>
-                <div className="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-700/50">
-                    <Users className="w-4 h-4 text-orange-400" />
+                <div className="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-700/50 w-full sm:w-auto">
+                    <Users className="w-4 h-4 text-orange-400 shrink-0" />
                     <select
-                        className="bg-transparent text-white font-medium focus:outline-none focus:ring-0 appearance-none cursor-pointer"
+                        className="bg-transparent text-white font-medium focus:outline-none focus:ring-0 appearance-none cursor-pointer w-full"
                         value={team}
                         onChange={(e) => setTeam(e.target.value)}
                     >
@@ -72,11 +72,11 @@ const TeamPanel = ({ title, team, setTeam, otherTeam, allTeams, activePlayers, o
             </div>
 
             <div className="flex flex-col gap-2 relative z-10">
-                <label className="text-xs uppercase font-bold text-slate-500 tracking-wider">Select Player from Roster</label>
-                <div className="flex gap-3">
+                <label className="text-[10px] md:text-xs uppercase font-bold text-slate-500 tracking-wider">Select Player from Roster</label>
+                <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
                         <select
-                            className="w-full bg-slate-900/80 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 appearance-none focus:outline-none focus:border-orange-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-slate-900/80 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 appearance-none focus:outline-none focus:border-orange-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
                             value={selectedPlayerName}
                             onChange={(e) => setSelectedPlayerName(e.target.value)}
                             disabled={!team || isLoadingRoster}
@@ -114,7 +114,7 @@ const TeamPanel = ({ title, team, setTeam, otherTeam, allTeams, activePlayers, o
                     <button
                         onClick={handleAddClick}
                         disabled={!selectedPlayerName}
-                        className="px-6 py-3 bg-slate-800 hover:bg-orange-600 border border-slate-700 hover:border-orange-500 text-white rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-slate-800 disabled:hover:border-slate-700 flex items-center justify-center gap-2 font-bold shadow-lg"
+                        className="w-full sm:w-auto px-6 py-3 bg-slate-800 hover:bg-orange-600 border border-slate-700 hover:border-orange-500 text-white rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-slate-800 disabled:hover:border-slate-700 flex items-center justify-center gap-2 font-bold shadow-lg shrink-0"
                     >
                         <PlusCircle className="w-5 h-5" /> Add
                     </button>

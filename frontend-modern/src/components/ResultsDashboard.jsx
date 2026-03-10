@@ -67,100 +67,100 @@ const ResultsDashboard = ({ data }) => {
     const fairnessLabel = data.assessment.fairness > 90 ? 'VERY FAIR' : data.assessment.fairness > 75 ? 'FAIR' : 'ONE-SIDED';
 
     const renderOutcomeCard = (teamData, label) => (
-        <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-lg flex-1">
-            <div className="p-4 bg-slate-800/50 border-b border-slate-700 flex justify-center text-3xl font-black text-white tracking-widest">
+        <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-lg flex-1 w-full">
+            <div className="p-3 md:p-4 bg-slate-800/50 border-b border-slate-700 flex justify-center text-2xl md:text-3xl font-black text-white tracking-widest">
                 {teamData.code}
             </div>
-            <div className="p-6 flex flex-col gap-4">
+            <div className="p-4 md:p-6 flex flex-col gap-4">
                 <div className="flex justify-between items-end">
-                    <span className="text-slate-400 font-bold uppercase text-xs">Expected Wins</span>
+                    <span className="text-slate-400 font-bold uppercase text-[10px] md:text-xs">Expected Wins</span>
                     <div className="flex flex-col items-end">
-                        <span className="text-3xl font-black text-white">{teamData.post_wins.toFixed(1)}</span>
-                        <div className="text-sm font-bold">{formatDelta(teamData.win_change, ' wins')}</div>
+                        <span className="text-2xl md:text-3xl font-black text-white">{teamData.post_wins.toFixed(1)}</span>
+                        <div className="text-xs md:text-sm font-bold">{formatDelta(teamData.win_change, ' wins')}</div>
                     </div>
                 </div>
                 <div className="text-right text-[10px] text-slate-500 font-mono tracking-widest mt-[-10px]">90% CI: {formatCI(teamData.win_ci)}</div>
 
                 <div className="flex justify-between items-end pb-4 border-b border-slate-700/50">
-                    <span className="text-slate-400 font-bold uppercase text-xs">Playoff Prob.</span>
+                    <span className="text-slate-400 font-bold uppercase text-[10px] md:text-xs">Playoff Prob.</span>
                     <div className="flex flex-col items-end">
-                        <span className="text-xl font-bold text-white">{getPlayoffProb(teamData.post_wins)}%</span>
-                        <div className="text-sm font-bold">{formatDelta(teamData.playoff_change, '%')}</div>
+                        <span className="text-lg md:text-xl font-bold text-white">{getPlayoffProb(teamData.post_wins)}%</span>
+                        <div className="text-xs md:text-sm font-bold">{formatDelta(teamData.playoff_change, '%')}</div>
                     </div>
                 </div>
 
-                <div className="flex justify-between items-center text-sm mt-2">
+                <div className="flex justify-between items-center text-xs md:text-sm mt-2">
                     <span className="text-slate-400">Injury Risk</span>
                     {formatDelta(teamData.injury_risk_change, '%', true)}
                 </div>
-                <div className="flex justify-between items-center text-sm">
+                <div className="flex justify-between items-center text-xs md:text-sm">
                     <span className="text-slate-400">Roster Health</span>
                     {formatDelta(teamData.health_change, ' pts')}
                 </div>
-                <div className="flex justify-between items-center text-sm">
+                <div className="flex justify-between items-center text-xs md:text-sm">
                     <span className="text-slate-400">Medical Index</span>
                     {formatDelta(teamData.medical_change, ' pts')}
                 </div>
             </div>
             <div className="p-3 bg-slate-950/40 border-t border-slate-800 text-center">
-                <span className={`text-lg tracking-widest font-black ${gradeColor(teamData.grade)}`}>{teamData.grade}</span>
+                <span className={`text-sm md:text-lg tracking-widest font-black ${gradeColor(teamData.grade)}`}>{teamData.grade}</span>
             </div>
         </div>
     );
 
     return (
-        <motion.div ref={containerRef} className="flex flex-col gap-6 w-full max-w-5xl mx-auto mt-8 relative z-10" layout>
+        <motion.div ref={containerRef} className="flex flex-col gap-6 w-full max-w-5xl mx-auto mt-4 md:mt-8 relative z-10" layout>
 
             {/* Core Outcome Row */}
-            <div className="flex flex-col lg:flex-row items-stretch justify-center gap-6">
+            <div className="flex flex-col lg:flex-row items-stretch justify-center gap-4 md:gap-6">
                 {renderOutcomeCard(data.team_a, "A")}
 
                 {/* Fairness Middle Column */}
-                <div className="flex flex-col items-center justify-center min-w-[180px] p-6 bg-slate-900 border border-slate-700 rounded-xl shadow-lg">
+                <div className="flex flex-col items-center justify-center min-w-[180px] p-6 bg-slate-900 border border-slate-700 rounded-xl shadow-lg order-first lg:order-none">
                     <span className="text-emerald-500/80 mb-2">⚖️</span>
-                    <div className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">FAIRNESS</div>
-                    <div className="text-4xl font-black text-white">{data.assessment.fairness}%</div>
-                    <div className="text-sm font-bold text-emerald-400 tracking-widest mt-1 mb-6">{fairnessLabel}</div>
+                    <div className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">FAIRNESS</div>
+                    <div className="text-3xl md:text-4xl font-black text-white">{data.assessment.fairness}%</div>
+                    <div className="text-xs md:text-sm font-bold text-emerald-400 tracking-widest mt-1 mb-4 md:mb-6">{fairnessLabel}</div>
 
-                    <div className="w-full h-px bg-slate-700 mb-6 relative">
+                    <div className="w-full h-px bg-slate-700 mb-4 md:mb-6 relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent"></div>
                     </div>
 
-                    <div className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">TARGET SCORE</div>
-                    <div className={`text-3xl font-black ${scoreColorClass}`}>{score}</div>
-                    <div className={`text-xs font-bold uppercase tracking-widest mt-1 text-center ${gradeColor(data.team_a.grade)}`}>{data.team_a.grade}</div>
+                    <div className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">TEAM A SCORE</div>
+                    <div className={`text-2xl md:text-3xl font-black ${scoreColorClass}`}>{score}</div>
+                    <div className={`text-[10px] md:text-xs font-bold uppercase tracking-widest mt-1 text-center ${gradeColor(data.team_a.grade)}`}>{data.team_a.grade}</div>
                 </div>
 
                 {renderOutcomeCard(data.team_b, "B")}
             </div>
 
             {/* Sim Info Banner */}
-            <div className="bg-[#1e293b] border border-slate-700 p-4 rounded-lg flex items-center justify-center gap-3 shadow-inner">
-                <Cpu className="w-5 h-5 text-rose-400" />
-                <span className="text-sm text-slate-300">Analysis based on <strong className="text-white">1,000 Monte Carlo iterations</strong> sampling injury risk and stat variance.</span>
+            <div className="bg-[#1e293b] border border-slate-700 p-4 rounded-lg flex flex-col sm:flex-row items-center justify-center gap-3 shadow-inner text-center sm:text-left">
+                <Cpu className="w-5 h-5 text-rose-400 shrink-0" />
+                <span className="text-xs md:text-sm text-slate-300">Analysis based on <strong className="text-white">1,000 Monte Carlo iterations</strong> sampling injury risk and stat variance.</span>
             </div>
 
             {/* Traded Players Summary */}
-            <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 shadow-lg flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 md:p-6 shadow-lg flex flex-col md:flex-row justify-between items-center gap-6 md:gap-8">
                 <div className="flex-1 w-full">
-                    <h4 className="text-xs font-bold tracking-widest uppercase text-slate-500 mb-4 border-b border-slate-800 pb-2">SENT BY <span className="text-orange-400 ml-1">{data.team_a.code}</span></h4>
+                    <h4 className="text-[10px] font-bold tracking-widest uppercase text-slate-500 mb-3 border-b border-slate-800 pb-2">SENT BY <span className="text-orange-400 ml-1">{data.team_a.code}</span></h4>
                     <div className="flex flex-col gap-2">
                         {data.traded_players.from_a.map(p => (
-                            <div key={p.player_name} className="flex justify-between items-center text-sm p-2 bg-slate-800/40 rounded">
-                                <span className="font-bold text-slate-200">{p.player_name}</span>
-                                <span className="text-xs text-slate-400">{p.points_per_game.toFixed(1)} PPG · {p.medical_grade}</span>
+                            <div key={p.player_name} className="flex justify-between items-center text-xs md:text-sm p-2 bg-slate-800/40 rounded">
+                                <span className="font-bold text-slate-200 truncate pr-2">{p.player_name}</span>
+                                <span className="text-[10px] md:text-xs text-slate-400 whitespace-nowrap">{p.points_per_game.toFixed(1)} PPG · {p.medical_grade}</span>
                             </div>
                         ))}
                     </div>
                 </div>
-                <ArrowRightLeft className="w-8 h-8 text-slate-600 hidden md:block" />
+                <ArrowRightLeft className="w-6 h-6 md:w-8 md:h-8 text-slate-600 rotate-90 md:rotate-0" />
                 <div className="flex-1 w-full">
-                    <h4 className="text-xs font-bold tracking-widest uppercase text-slate-500 mb-4 border-b border-slate-800 pb-2">SENT BY <span className="text-emerald-400 ml-1">{data.team_b.code}</span></h4>
+                    <h4 className="text-[10px] font-bold tracking-widest uppercase text-slate-500 mb-3 border-b border-slate-800 pb-2">SENT BY <span className="text-emerald-400 ml-1">{data.team_b.code}</span></h4>
                     <div className="flex flex-col gap-2">
                         {data.traded_players.from_b.map(p => (
-                            <div key={p.player_name} className="flex justify-between items-center text-sm p-2 bg-slate-800/40 rounded">
-                                <span className="font-bold text-slate-200">{p.player_name}</span>
-                                <span className="text-xs text-slate-400">{p.points_per_game.toFixed(1)} PPG · {p.medical_grade}</span>
+                            <div key={p.player_name} className="flex justify-between items-center text-xs md:text-sm p-2 bg-slate-800/40 rounded">
+                                <span className="font-bold text-slate-200 truncate pr-2">{p.player_name}</span>
+                                <span className="text-[10px] md:text-xs text-slate-400 whitespace-nowrap">{p.points_per_game.toFixed(1)} PPG · {p.medical_grade}</span>
                             </div>
                         ))}
                     </div>

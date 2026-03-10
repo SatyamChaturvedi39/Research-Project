@@ -12,7 +12,6 @@ import { Loader2, ArrowRightLeft, Activity } from 'lucide-react';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
-  const [videoSource, setVideoSource] = useState('/intro.mp4');
   const videoRef = React.useRef(null);
   const [teamA, setTeamA] = useState('');
   const [teamB, setTeamB] = useState('');
@@ -41,13 +40,17 @@ function App() {
         console.log("Autoplay blocked or video error:", err);
       });
     }
-  }, [videoSource]);
 
-  const handleVideoEnd = () => {
-    if (videoSource === '/intro.mp4') {
-      setVideoSource('/rock-video.mp4');
-    }
-  };
+    // Playback Heartbeat for Brave/Resource Throttling
+    const heartbeat = setInterval(() => {
+      if (videoRef.current && videoRef.current.paused && !videoRef.current.ended) {
+        console.log("Heartbeat: Video stalled, re-triggering play...");
+        videoRef.current.play().catch(() => {});
+      }
+    }, 2000);
+
+    return () => clearInterval(heartbeat);
+  }, []);
 
   const handleAnalyze = async () => {
     if (!teamA || !teamB || sentA.length === 0 || sentB.length === 0) {
@@ -115,17 +118,17 @@ function App() {
     <div className="min-h-screen relative text-slate-100">
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <video
-          key={videoSource}
           ref={videoRef}
           className="w-full h-full object-cover"
           autoPlay
           muted
           playsInline
           preload="auto"
-          loop={videoSource === '/intro.mp4'}
-          onEnded={handleVideoEnd}
+          loop
+          crossOrigin="anonymous"
+          onWaiting={() => console.log("Video: Buffering/Waiting...")}
         >
-          <source src={videoSource} type="video/mp4" />
+          <source src="/intro.mp4" type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-slate-950/90"></div>
       </div>
@@ -145,12 +148,12 @@ function App() {
               >
                 <Hero />
 
-                <div id="trade-analyzer" className="py-24 px-4 bg-slate-900 shadow-[0_-20px_50px_rgba(0,0,0,0.8)] border-t border-slate-700/50 rounded-t-[3rem] -mx-4 md:-mx-8">
+                <div id="trade-analyzer" className="py-12 md:py-24 px-4 bg-slate-900 shadow-[0_-20px_50px_rgba(0,0,0,0.8)] border-t border-slate-700/50 rounded-t-[2rem] md:rounded-t-[3rem] -mx-4 md:-mx-8">
                   <div className="max-w-6xl mx-auto w-full">
-                    <h2 className="text-3xl md:text-5xl font-black text-center mb-16 text-white tracking-tighter uppercase italic">
+                    <h2 className="text-3xl md:text-5xl font-black text-center mb-10 md:mb-16 text-white tracking-tighter uppercase italic">
                       Professional Engine
                     </h2>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 relative">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 relative">
                       <div className="flex flex-col gap-4">
                         <TeamPanel
                           title="Team A"
@@ -199,7 +202,7 @@ function App() {
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0 }}
-                            className="mb-4 text-red-100 bg-red-600 px-6 py-3 rounded-xl border border-red-500 shadow-lg text-sm font-bold"
+                            className="mb-4 text-red-100 bg-red-600 px-6 py-3 rounded-xl border border-red-500 shadow-lg text-sm font-bold text-center w-full max-w-sm"
                           >
                             {error}
                           </motion.div>
@@ -208,12 +211,12 @@ function App() {
                       <button
                         onClick={handleAnalyze}
                         disabled={isAnalyzing}
-                        className="group relative px-12 py-4 bg-gradient-to-r from-orange-500 to-rose-500 text-white font-bold text-lg rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform shadow-[0_0_40px_rgba(249,115,22,0.3)] disabled:opacity-50 disabled:hover:scale-100"
+                        className="group relative w-full sm:w-auto px-12 py-4 bg-gradient-to-r from-orange-500 to-rose-500 text-white font-bold text-lg rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform shadow-[0_0_40px_rgba(249,115,22,0.3)] disabled:opacity-50 disabled:hover:scale-100"
                       >
                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                         {isAnalyzing ? (
-                          <span className="flex items-center gap-2 relative z-10">
-                            <Loader2 className="w-5 h-5 animate-spin" /> Deep Inference Running...
+                          <span className="flex items-center justify-center gap-2 relative z-10">
+                            <Loader2 className="w-5 h-5 animate-spin" /> Deep Inference...
                           </span>
                         ) : (
                           <span className="relative z-10">Analyze Trade</span>

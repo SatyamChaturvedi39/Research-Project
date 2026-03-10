@@ -98,23 +98,23 @@ const PlayerCard = ({ p, onRemove }) => {
             </div>
 
             {/* Core Stats Block */}
-            <div className="p-4 grid grid-cols-4 gap-2 bg-slate-900/50 text-center divide-x divide-slate-800 items-center">
-                <div className="flex flex-col">
-                    <span className="text-2xl font-light text-slate-300">{p.current_stats?.ppg?.toFixed(1) || '?'}</span>
-                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mt-1">Prior PPG</span>
+            <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-2 bg-slate-900/50 text-center divide-y md:divide-y-0 md:divide-x divide-slate-800 items-center">
+                <div className="flex flex-col py-2 md:py-0">
+                    <span className="text-xl md:text-2xl font-light text-slate-300">{p.current_stats?.ppg?.toFixed(1) || '?'}</span>
+                    <span className="text-[9px] md:text-[10px] text-slate-500 uppercase font-bold tracking-wider mt-1">Prior PPG</span>
                 </div>
-                <div className="flex flex-col items-center justify-center p-3 relative group/stat cursor-default">
+                <div className="flex flex-col items-center justify-center p-2 md:p-3 relative group/stat cursor-default border-none">
                     <div className="absolute inset-0 bg-orange-500/5 shadow-[0_0_15px_rgba(249,115,22,0.1)] rounded-lg pointer-events-none"></div>
-                    <span className="text-3xl font-black text-white relative z-10">{p.predictions?.ppg?.toFixed(1) || '--'}</span>
-                    <span className="text-[10px] text-orange-400 uppercase font-bold tracking-wider relative z-10 mt-1">Pred PPG</span>
+                    <span className="text-2xl md:text-3xl font-black text-white relative z-10">{p.predictions?.ppg?.toFixed(1) || '--'}</span>
+                    <span className="text-[9px] md:text-[10px] text-orange-400 uppercase font-bold tracking-wider relative z-10 mt-1">Pred PPG</span>
                 </div>
-                <div className="flex flex-col">
-                    <span className="text-xl font-medium text-slate-200">{p.predictions?.rpg?.toFixed(1) || '?'}</span>
-                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mt-1">Pred RPG</span>
+                <div className="flex flex-col py-2 md:py-0 pt-4 md:pt-0">
+                    <span className="text-lg md:text-xl font-medium text-slate-200">{p.predictions?.rpg?.toFixed(1) || '?'}</span>
+                    <span className="text-[9px] md:text-[10px] text-slate-500 uppercase font-bold tracking-wider mt-1">Pred RPG</span>
                 </div>
-                <div className="flex flex-col">
-                    <span className="text-xl font-medium text-slate-200">{p.predictions?.apg?.toFixed(1) || '?'}</span>
-                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mt-1">Pred APG</span>
+                <div className="flex flex-col py-2 md:py-0 pt-4 md:pt-0">
+                    <span className="text-lg md:text-xl font-medium text-slate-200">{p.predictions?.apg?.toFixed(1) || '?'}</span>
+                    <span className="text-[9px] md:text-[10px] text-slate-500 uppercase font-bold tracking-wider mt-1">Pred APG</span>
                 </div>
             </div>
 
