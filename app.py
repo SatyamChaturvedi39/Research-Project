@@ -408,6 +408,35 @@ try:
             players_df['medical_score'] = [m['medical_score'] for m in medical_results]
             players_df['medical_grade'] = [m['medical_grade'] for m in medical_results]
             
+            # --- SALARY INTEGRATION (Align with M2_fix.ipynb) ---
+            print("Loading salary data...")
+            salary_paths = ["nba_salary_cleaned.csv", "data/nba_salary_cleaned.csv", os.path.join(BASE_DIR, "notebooks", "nba_salary_cleaned.csv")]
+            salary_df = None
+            for path in salary_paths:
+                full_path = os.path.join(BASE_DIR, path) if not os.path.isabs(path) else path
+                if os.path.exists(full_path):
+                    salary_df = pd.read_csv(full_path)
+                    print(f"[OK] Found salary data at {full_path}")
+                    break
+            
+            if salary_df is not None:
+                # Most recent salary (get the latest available year for every player)
+                latest_salary = salary_df.sort_values('season').groupby('name').last().reset_index()
+                latest_salary['normalized_name'] = latest_salary['name'].apply(normalize_name)
+                
+                salary_cols = ['normalized_name', 'salary', 'total_contract_value', 'years_remaining', 'cap_hit_percent', 'luxury_tax_risk', 'npv_salary']
+                cols_to_use = [c for c in salary_cols if c in latest_salary.columns]
+                
+                players_df = players_df.merge(latest_salary[cols_to_use], on='normalized_name', how='left')
+                
+                # Fill missing
+                for col in ['salary', 'total_contract_value', 'years_remaining', 'cap_hit_percent', 'luxury_tax_risk', 'npv_salary']:
+                    if col in players_df.columns:
+                        players_df[col] = players_df[col].fillna(0)
+                print(f"[OK] Merged salary information for {len(latest_salary)} players")
+            else:
+                print("[WARN] No salary data found. Skipping financial analysis.")
+            
             print("[OK] Successfully enriched player data")
         except Exception as e:
             print(f"[WARN] Failed to enrich player data: {e}. Trade analysis features may be limited.")
@@ -482,6 +511,43 @@ def get_latest_season_data():
         )
 
     return season_df
+
+
+def _explain_predictions(player_row, model, explainers, feature_names, target_names, current_age=None):
+    """
+    Helper for multi-output predictions and SHAP explanations for a single player row.
+    Returns: (predictions_dict, confidence_ranges, shap_results_list)
+    """
+    # 1. Feature Extraction
+    feature_vals = np.array([player_row[f] for f in feature_names])
+    feature_vector = feature_vals.reshape(1, -1)
+    
+    # 2. Predictions
+    preds_raw = model.predict(feature_vector)[0]
+    pred_dict = {target_names[i].replace('target_next_', ''): round(float(preds_raw[i]), 2) for i in range(len(target_names))}
+    
+    # 3. SHAP (Multi-target)
+    shap_results = []
+    for i, target in enumerate(target_names):
+        target_key = target.replace('target_next_', '')
+        explainer = explainers.get(target)
+        if explainer:
+            try:
+                sv = explainer.shap_values(feature_vector)
+                if sv.ndim == 1: sv = sv.reshape(1, -1)
+                shap_row = sv[0]
+                
+                # Get top features for this target
+                indices = np.argsort(np.abs(shap_row))[::-1][:3] 
+                for idx in indices:
+                    shap_results.append((feature_names[idx], float(shap_row[idx]), target_key, float(feature_vals[idx])))
+            except Exception:
+                continue
+                
+    # Sort by absolute SHAP across all targets to get "most defining" characteristics
+    shap_results.sort(key=lambda x: abs(x[1]), reverse=True)
+    
+    return pred_dict, {}, shap_results
 
 
 def calculate_current_age(dataset_age, dataset_season):
@@ -628,7 +694,7 @@ def get_players():
         season_data = season_data[season_data['team'] == team]
 
     players_list = season_data.sort_values('points_per_game', ascending=False)[
-        ['player_name', 'team', 'age', 'points_per_game']
+        ['player_name', 'team', 'age', 'points_per_game', 'salary']
     ].to_dict('records')
 
     return jsonify({
@@ -825,6 +891,15 @@ def evaluate_trade():
     traded_from_a = roster_a[roster_a['normalized_name'].isin(sent_a_norm)]
     traded_from_b = roster_b[roster_b['normalized_name'].isin(sent_b_norm)]
 
+    # 1b. Financial Impact
+    salary_out_a = float(traded_from_a['salary'].sum())
+    salary_in_a = float(traded_from_b['salary'].sum())
+    salary_delta_a = salary_in_a - salary_out_a
+
+    tax_risk_out_a = float(traded_from_a['luxury_tax_risk'].mean()) if not traded_from_a.empty else 0.0
+    tax_risk_in_a = float(traded_from_b['luxury_tax_risk'].mean()) if not traded_from_b.empty else 0.0
+    tax_risk_ch_a = tax_risk_in_a - tax_risk_out_a
+
     # New rosters
     post_a = pd.concat([roster_a[~roster_a['normalized_name'].isin(sent_a_norm)], traded_from_b])
     post_b = pd.concat([roster_b[~roster_b['normalized_name'].isin(sent_b_norm)], traded_from_a])
@@ -835,12 +910,12 @@ def evaluate_trade():
     pre_health_b = calculate_roster_health_score(roster_b)
     post_health_b = calculate_roster_health_score(post_b)
 
-    # 2. Win Simulation
+    # 2. Win Simulation (1000 sims for notebook-level confidence)
     print(f"Simulating trade impact for {team_a_code} and {team_b_code}...")
-    pre_wins_a = run_injury_adjusted_simulation(roster_a, n_sims=500)
-    post_wins_a = run_injury_adjusted_simulation(post_a, n_sims=500)
-    pre_wins_b = run_injury_adjusted_simulation(roster_b, n_sims=500)
-    post_wins_b = run_injury_adjusted_simulation(post_b, n_sims=500)
+    pre_wins_a = run_injury_adjusted_simulation(roster_a, n_sims=1000)
+    post_wins_a = run_injury_adjusted_simulation(post_a, n_sims=1000)
+    pre_wins_b = run_injury_adjusted_simulation(roster_b, n_sims=1000)
+    post_wins_b = run_injury_adjusted_simulation(post_b, n_sims=1000)
 
     # 3. Metrics Calculation
     delta_a = float(post_wins_a.mean() - pre_wins_a.mean())
@@ -893,7 +968,6 @@ def evaluate_trade():
             c_age = calculate_current_age(top_player['age'], latest_season) if 'age' in top_player else 25
             _, _, shap_exp = _explain_predictions(top_player, ml_model, shap_explainers, feature_names, target_names, current_age=c_age)
             
-            from app import _build_reason
             reasons = [_build_reason(f, v, s, t, c_age) for f, s, t, v in shap_exp[:2]]
             return {"name": top_player['player_name'], "reasons": reasons}
         except Exception as e:
@@ -904,11 +978,13 @@ def evaluate_trade():
 
     # Safe select columns for traded players
     def safe_cols(df):
-        cols = ['player_name', 'points_per_game']
-        if 'injury_risk_prob' in df.columns: cols.append('injury_risk_prob')
-        if 'medical_score' in df.columns: cols.append('medical_score')
-        if 'medical_grade' in df.columns: cols.append('medical_grade')
-        return df[cols].to_dict('records')
+        cols = ['player_name', 'points_per_game', 'salary', 'total_contract_value', 'luxury_tax_risk']
+        # Filter for existing columns
+        active_cols = [c for c in cols if c in df.columns]
+        if 'injury_risk_prob' in df.columns: active_cols.append('injury_risk_prob')
+        if 'medical_score' in df.columns: active_cols.append('medical_score')
+        if 'medical_grade' in df.columns: active_cols.append('medical_grade')
+        return df[active_cols].to_dict('records')
 
     # Result response
     result = {
@@ -930,6 +1006,10 @@ def evaluate_trade():
             "health_change": round(post_health_a['roster_health_score'] - pre_health_a['roster_health_score'], 1),
             "injury_risk_change": round(inj_ch_a * 100, 2),
             "medical_change": round(med_ch_a, 1),
+            "salary_change": round(salary_delta_a, 1),
+            "salary_out": round(salary_out_a, 1),
+            "salary_in": round(salary_in_a, 1),
+            "tax_risk_change": round(tax_risk_ch_a, 2),
             "grade": get_trade_rating(score_a),
             "score": round(score_a, 1)
         },
@@ -947,6 +1027,10 @@ def evaluate_trade():
             "health_change": round(post_health_b['roster_health_score'] - pre_health_b['roster_health_score'], 1),
             "injury_risk_change": round(-inj_ch_a * 100, 2),
             "medical_change": round(-med_ch_a, 1),
+            "salary_change": round(-salary_delta_a, 1),
+            "salary_out": round(salary_in_a, 1),
+            "salary_in": round(salary_out_a, 1),
+            "tax_risk_change": round(-tax_risk_ch_a, 2),
             "grade": get_trade_rating(score_b),
             "score": round(score_b, 1)
         },
@@ -980,7 +1064,7 @@ def get_team_roster(team_code):
     
     players = roster[[
         'player_name', 'position', 'age', 'points_per_game', 
-        'rebounds_per_game', 'assists_per_game', 'injury_risk_category', 'medical_grade'
+        'rebounds_per_game', 'assists_per_game', 'injury_risk_category', 'medical_grade', 'salary'
     ]].to_dict('records')
     
     # Calculate team-level metrics

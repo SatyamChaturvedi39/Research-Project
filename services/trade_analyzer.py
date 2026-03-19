@@ -232,8 +232,8 @@ def calculate_team_score(roster, sampled_stats):
     return score
 
 def predict_wins(score):
-    """Convert team score to wins using regression-derived formula. Recalibrated intercept for 2025 ML scoring environment."""
-    wins = (score - 92.5) * 1.5 + 41
+    """Convert team score to wins using regression-derived formula as recalibrated in M2_fix.ipynb."""
+    wins = (score - 113.7) * 1.2 + 41
     return np.clip(wins, 5, 75)
 
 def wins_to_playoff_prob(wins):

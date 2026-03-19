@@ -118,6 +118,16 @@ const PlayerCard = ({ p, onRemove }) => {
                 </div>
             </div>
 
+            {/* Salary Block */}
+            {p.salary > 0 && (
+                <div className="px-5 py-2 bg-slate-900/80 border-t border-slate-800/50 flex justify-between items-center">
+                    <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Base Salary</div>
+                    <div className="font-mono text-sm font-bold text-emerald-400">
+                        ${(p.salary/1000000).toFixed(2)}M
+                    </div>
+                </div>
+            )}
+
             {/* Inference Bounds */}
             {confObj && (
                 <div className="px-5 py-3 bg-slate-900 border-t border-slate-800 flex justify-between items-center">

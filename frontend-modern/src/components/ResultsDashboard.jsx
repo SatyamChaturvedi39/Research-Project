@@ -97,9 +97,16 @@ const ResultsDashboard = ({ data }) => {
                     <span className="text-slate-400">Roster Health</span>
                     {formatDelta(teamData.health_change, ' pts')}
                 </div>
-                <div className="flex justify-between items-center text-xs md:text-sm">
-                    <span className="text-slate-400">Medical Index</span>
-                    {formatDelta(teamData.medical_change, ' pts')}
+                
+                <div className="mt-2 pt-2 border-t border-slate-700/30">
+                    <div className="flex justify-between items-center text-xs md:text-sm">
+                        <span className="text-slate-400">Salary Impact</span>
+                        {formatDelta(teamData.salary_change / 1000000, 'M', true)}
+                    </div>
+                    <div className="flex justify-between items-center text-xs md:text-sm">
+                        <span className="text-slate-400">Luxury Tax Risk</span>
+                        {formatDelta(teamData.tax_risk_change, '%', true)}
+                    </div>
                 </div>
             </div>
             <div className="p-3 bg-slate-950/40 border-t border-slate-800 text-center">
@@ -148,7 +155,9 @@ const ResultsDashboard = ({ data }) => {
                         {data.traded_players.from_a.map(p => (
                             <div key={p.player_name} className="flex justify-between items-center text-xs md:text-sm p-2 bg-slate-800/40 rounded">
                                 <span className="font-bold text-slate-200 truncate pr-2">{p.player_name}</span>
-                                <span className="text-[10px] md:text-xs text-slate-400 whitespace-nowrap">{p.points_per_game.toFixed(1)} PPG · {p.medical_grade}</span>
+                                <span className="text-[10px] md:text-xs text-slate-400 whitespace-nowrap">
+                                    ${(p.salary/1000000).toFixed(1)}M · {p.points_per_game.toFixed(1)} PPG
+                                </span>
                             </div>
                         ))}
                     </div>
@@ -160,7 +169,9 @@ const ResultsDashboard = ({ data }) => {
                         {data.traded_players.from_b.map(p => (
                             <div key={p.player_name} className="flex justify-between items-center text-xs md:text-sm p-2 bg-slate-800/40 rounded">
                                 <span className="font-bold text-slate-200 truncate pr-2">{p.player_name}</span>
-                                <span className="text-[10px] md:text-xs text-slate-400 whitespace-nowrap">{p.points_per_game.toFixed(1)} PPG · {p.medical_grade}</span>
+                                <span className="text-[10px] md:text-xs text-slate-400 whitespace-nowrap">
+                                    ${(p.salary/1000000).toFixed(1)}M · {p.points_per_game.toFixed(1)} PPG
+                                </span>
                             </div>
                         ))}
                     </div>
