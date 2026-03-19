@@ -119,6 +119,33 @@ const TeamPanel = ({ title, team, setTeam, otherTeam, allTeams, activePlayers, o
                         <PlusCircle className="w-5 h-5" /> Add
                     </button>
                 </div>
+
+                {/* Player Preview Selection - Task Request: "whenever a player is selected his headshot should be shown first" */}
+                {selectedPlayerName && (
+                    <div className="mt-4 flex items-center gap-4 p-4 bg-slate-900/40 rounded-xl border border-slate-800 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-orange-500/30 bg-slate-900 shrink-0">
+                            <img 
+                                src={roster.find(p => p.player_name === selectedPlayerName)?.photo_url} 
+                                alt={selectedPlayerName}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = "https://www.nba.com/assets/logos/teams/primary/web/NBA.svg"; // Fallback to NBA logo
+                                    e.target.style.padding = "1rem";
+                                }}
+                            />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-lg md:text-xl font-black text-white">{selectedPlayerName}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded uppercase tracking-tighter">
+                                    Ready to Trade
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-medium">Click "Add" to evaluate impact</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -481,6 +481,24 @@ except Exception as e:
 # Helper Functions
 # ============================================================================
 
+def get_player_photo_url(player_name):
+    """Generate the GitHub raw URL for a player's headshot with exact First-Last formatting."""
+    if not player_name:
+        return None
+    
+    # 1. Strip and split name portions (handles "Anthony Davis " or "  Anthony Davis")
+    parts = player_name.strip().split()
+    
+    # 2. Reconstruct as First-Last (skipping middle names or suffixes like Jr. for GitHub compatibility)
+    if len(parts) >= 2:
+        formatted_name = f"{parts[0].capitalize()}-{parts[1].capitalize()}"
+    else:
+        # Fallback for single-name players (rare) or malformed strings
+        formatted_name = player_name.strip().replace(" ", "-").title()
+        
+    return f"https://raw.githubusercontent.com/GreenGuitar0/nba-players/main/player_images/{formatted_name}.jpg"
+
+
 def get_latest_season_data():
     """
     Get data from the most recent season, deduplicated and with team
@@ -697,6 +715,10 @@ def get_players():
         ['player_name', 'team', 'age', 'points_per_game', 'salary']
     ].to_dict('records')
 
+    # Add photo_url
+    for p in players_list:
+        p['photo_url'] = get_player_photo_url(p['player_name'])
+
     return jsonify({
         'players': players_list,
         'team': team,
@@ -721,6 +743,10 @@ def search_players():
     matches = season_data[
         season_data['player_name'].str.lower().str.contains(query, na=False)
     ][['player_name', 'team', 'points_per_game']].to_dict('records')
+
+    # Add photo_url
+    for m in matches:
+        m['photo_url'] = get_player_photo_url(m['player_name'])
 
     return jsonify({'results': matches[:10], 'query': query})
 
@@ -834,6 +860,7 @@ def predict():
             'predictions':        pred_dict,
             'confidence_ranges':  confidence_ranges,
             'shap_explanation':   shap_explanation,
+            'photo_url':          get_player_photo_url(latest['player_name']),
             'model_version':      model_metadata.get('model_version', 'v2'),
             'injury_risk_prob':   float(latest.get('injury_risk_prob', 0.05)),
             'injury_risk_category': str(latest.get('injury_risk_category', 'Low')),
@@ -984,7 +1011,11 @@ def evaluate_trade():
         if 'injury_risk_prob' in df.columns: active_cols.append('injury_risk_prob')
         if 'medical_score' in df.columns: active_cols.append('medical_score')
         if 'medical_grade' in df.columns: active_cols.append('medical_grade')
-        return df[active_cols].to_dict('records')
+        
+        result_dicts = df[active_cols].to_dict('records')
+        for r in result_dicts:
+            r['photo_url'] = get_player_photo_url(r['player_name'])
+        return result_dicts
 
     # Result response
     result = {

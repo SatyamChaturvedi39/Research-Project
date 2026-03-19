@@ -153,8 +153,18 @@ const ResultsDashboard = ({ data }) => {
                     <h4 className="text-[10px] font-bold tracking-widest uppercase text-slate-500 mb-3 border-b border-slate-800 pb-2">SENT BY <span className="text-orange-400 ml-1">{data.team_a.code}</span></h4>
                     <div className="flex flex-col gap-2">
                         {data.traded_players.from_a.map(p => (
-                            <div key={p.player_name} className="flex justify-between items-center text-xs md:text-sm p-2 bg-slate-800/40 rounded">
-                                <span className="font-bold text-slate-200 truncate pr-2">{p.player_name}</span>
+                            <div key={p.player_name} className="flex justify-between items-center text-xs md:text-sm p-2 bg-slate-800/40 rounded group hover:bg-slate-800 transition-colors">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-700 bg-slate-950 shrink-0">
+                                        <img 
+                                            src={p.photo_url} 
+                                            alt={p.player_name}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { e.target.onerror = null; e.target.src = "https://www.nba.com/assets/logos/teams/primary/web/NBA.svg"; }}
+                                        />
+                                    </div>
+                                    <span className="font-bold text-slate-200 truncate">{p.player_name}</span>
+                                </div>
                                 <span className="text-[10px] md:text-xs text-slate-400 whitespace-nowrap">
                                     ${(p.salary/1000000).toFixed(1)}M · {p.points_per_game.toFixed(1)} PPG
                                 </span>
@@ -167,8 +177,18 @@ const ResultsDashboard = ({ data }) => {
                     <h4 className="text-[10px] font-bold tracking-widest uppercase text-slate-500 mb-3 border-b border-slate-800 pb-2">SENT BY <span className="text-emerald-400 ml-1">{data.team_b.code}</span></h4>
                     <div className="flex flex-col gap-2">
                         {data.traded_players.from_b.map(p => (
-                            <div key={p.player_name} className="flex justify-between items-center text-xs md:text-sm p-2 bg-slate-800/40 rounded">
-                                <span className="font-bold text-slate-200 truncate pr-2">{p.player_name}</span>
+                            <div key={p.player_name} className="flex justify-between items-center text-xs md:text-sm p-2 bg-slate-800/40 rounded group hover:bg-slate-800 transition-colors">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-700 bg-slate-950 shrink-0">
+                                        <img 
+                                            src={p.photo_url} 
+                                            alt={p.player_name}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { e.target.onerror = null; e.target.src = "https://www.nba.com/assets/logos/teams/primary/web/NBA.svg"; }}
+                                        />
+                                    </div>
+                                    <span className="font-bold text-slate-200 truncate">{p.player_name}</span>
+                                </div>
                                 <span className="text-[10px] md:text-xs text-slate-400 whitespace-nowrap">
                                     ${(p.salary/1000000).toFixed(1)}M · {p.points_per_game.toFixed(1)} PPG
                                 </span>

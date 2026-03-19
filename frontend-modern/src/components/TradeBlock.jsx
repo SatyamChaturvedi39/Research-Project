@@ -65,17 +65,42 @@ const PlayerCard = ({ p, onRemove }) => {
             className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden group">
 
             {/* Header Block */}
-            <div className="p-4 border-b border-slate-800 bg-slate-800/30 flex justify-between items-start">
-                <div>
-                    <div className="font-bold text-lg text-white tracking-wide">{p.player_name}</div>
-                    <div className="text-xs text-slate-400 flex items-center gap-2 mt-1">
-                        <span>{p.team}</span>
-                        <span>•</span>
-                        <span>Age {p.current_age}</span>
-                        <span>•</span>
-                        <span className={cn("font-bold flex items-center gap-1", medColorClass)}>
-                            <Activity className="w-3 h-3" /> {p.medical_grade}
-                        </span>
+            <div className="p-4 border-b border-slate-800 bg-slate-800/30 flex justify-between items-start relative overflow-hidden">
+                {/* Background Headshot (Subtle) */}
+                <img 
+                    src={p.photo_url} 
+                    className="absolute right-[-10%] top-[-50%] w-32 h-32 object-cover opacity-5 pointer-events-none grayscale blur-sm"
+                    alt="" 
+                />
+
+                <div className="flex gap-4 items-center">
+                    {/* Visual Headshot */}
+                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border border-slate-700 bg-slate-950 shrink-0 shadow-xl group-hover:border-orange-500/50 transition-colors">
+                        <img 
+                            src={p.photo_url} 
+                            alt={p.player_name}
+                            className="w-full h-full object-cover scale-[1.1] translate-y-[5%] group-hover:scale-[1.2] transition-transform duration-500"
+                            onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "https://www.nba.com/assets/logos/teams/primary/web/NBA.svg"; 
+                                e.target.style.padding = "0.5rem";
+                            }}
+                        />
+                    </div>
+
+                    <div>
+                        <div className="font-bold text-lg md:text-xl text-white tracking-wide group-hover:text-orange-300 transition-colors">
+                            {p.player_name}
+                        </div>
+                        <div className="text-xs text-slate-400 flex items-center gap-2 mt-1">
+                            <span className="font-black text-orange-500">{p.team}</span>
+                            <span>•</span>
+                            <span>Age {p.current_age}</span>
+                            <span>•</span>
+                            <span className={cn("font-bold flex items-center gap-1", medColorClass)}>
+                                <Activity className="w-3 h-3" /> {p.medical_grade}
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
