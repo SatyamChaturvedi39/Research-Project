@@ -8,9 +8,11 @@ import ResultsDashboard from './components/ResultsDashboard';
 import ModelInfo from './components/ModelInfo';
 import About from './components/About';
 import Hero from './components/Hero';
+import IntroAnimation from './components/IntroAnimation';
 import { Loader2, ArrowRightLeft, Activity } from 'lucide-react';
 
 function App() {
+  const [showIntro, setShowIntro] = useState(true);
   const [currentPage, setCurrentPage] = useState('home');
   const videoRef = React.useRef(null);
   const [teamA, setTeamA] = useState('');
@@ -115,8 +117,10 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen relative text-slate-100">
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+    <>
+      {showIntro && <IntroAnimation onComplete={() => setShowIntro(false)} />}
+      <div className="min-h-screen relative text-slate-100">
+        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <video
           ref={videoRef}
           className="w-full h-full object-cover"
@@ -296,7 +300,8 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </>
   );
 }
 
