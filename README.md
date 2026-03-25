@@ -1,99 +1,196 @@
-<div align="center">
-  <h1>🏀 NBA Trade Analyzer: An Explainable AI Trade Machine</h1>
-  <p><i>A modern, data-driven methodology for evaluating professional basketball trades using Machine Learning, Monte Carlo simulations, and Explainable AI.</i></p>
-</div>
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/XGBoost-ML_Engine-FF6600?style=for-the-badge&logo=xgboost&logoColor=white" />
+  <img src="https://img.shields.io/badge/Flask-3.0-000000?style=for-the-badge&logo=flask&logoColor=white" />
+  <img src="https://img.shields.io/badge/MongoDB-NoSQL-47A248?style=for-the-badge&logo=mongodb&logoColor=white" />
+</p>
+
+<h1 align="center">🏀 NBA Trade Analyzer</h1>
+<h3 align="center">AI-Powered Trade Evaluation & Player Performance Forecasting</h3>
+
+<p align="center">
+  <i>Transforming raw basketball data into clear, actionable front-office intelligence.</i>
+</p>
 
 ---
 
-## 🎯 What is this project?
-If you've ever used a public NBA trade machine, you've probably realized its fatal flaw: **it only checks if a trade is financially legal.** You could theoretically trade LeBron James for five bench players, and the machine would stamp it "Successful." 
+## 📌 About The Project
 
-But in the real world, front offices need to know: *Is this trade actually good for my team? How will these incoming players perform when their usage rates drop? Will adding a third point guard ruin our offensive flow?*
+The **NBA Trade Analyzer** is a full-stack, machine learning-driven web application that quantitatively evaluates multi-player NBA trades. Instead of relying on subjective scouting and raw box-score averages, this system predicts **post-trade player performance**, assesses **injury risk**, simulates **team win projections**, and validates **salary cap feasibility** — all in under 3 seconds.
 
-The **NBA Trade Analyzer** solves this. Instead of a basic salary checker, this 3-tier web application uses a **Multi-Output XGBoost Machine Learning Model** trained on 5 years of historical box scores to mathematically project how a player's stats (PPG, RPG, APG, MPG, TS%) will shift. It calculates injury risks using a Random Forest classifier, scores the roster "fit," and runs a 500-instance **Monte Carlo Simulation** to estimate the net change in actual team wins. 
+The application features **Explainable AI (SHAP)** to provide plain-English justifications for every prediction, ensuring complete transparency and trust for non-technical users.
 
-Finally, to avoid the dreaded "Black Box" problem of ML models, it uses **SHAP (SHapley Additive exPlanations)** to generate plain-English sentences explaining *why* the model made its prediction.
-
----
-
-## 🚀 The Core Features
-
-- **Multi-Stat Forecasting:** Predicts five distinct statistical avenues (Points, Rebounds, Assists, Minutes, True Shooting) simultaneously for up to 10 traded players.
-- **Monte Carlo Win Projections:** Runs 500 probabilistic simulations factoring in standard deviation and injury risk to project exactly how many 82-game regular-season wins a team is gaining or losing.
-- **Explainable AI (XAI):** Converts dense algorithmic math into readable insights (e.g., *"This player's age penalty is dragging his expected points down by 2.4 PPG"*).
-- **Positional & Fit Penalties:** The engine literally gets mad at you if you try to exploit the math. Trade for too many Centers? You get hit with a "Positional Logjam Penalty." Trade for 3 players who all shoot 20 times a game? You trigger the "Scoring Cannibalization" penalty.
-- **Cinematic UI/UX:** Built on React and Framer Motion, utilizing dark-mode "Glassmorphism" to look like a premium, proprietary front-office tool.
+> Built as a capstone research project at CHRIST (Deemed to be University), Department of Computer Science.
 
 ---
 
-## 🧠 The Project Flow
-Here is exactly what happens under the hood when you hit the **"Analyze Trade"** button:
+## ✨ Key Features
 
-1. **The Request:** The React frontend captures the selected players and teams, dropping them into a JSON payload sent to the Flask Rest API.
-2. **Feature Extraction:** The Python backend queries MongoDB, locating the 54 historically engineered features (lag years, statistical trends, peak regression) for those specific players.
-3. **Model Inference:** The vectors hit the serialized XGBoost regression model and the Random Forest medical classifier, predicting physical output and injury probabilities in milliseconds.
-4. **SHAP Interpretation:** The TreeExplainer computes the combinatorial logic of the decision tree, ranking exactly which variables most heavily influenced the prediction.
-5. **The Team Simulator:** The newly acquired players are algorithmically fused with their designated new team. The `trade_analyzer.py` engine checks for positional overlap, calculates roster depth health, and loops 500 simulations to find the median projected win delta.
-6. **The Final Score:** A master formula compiles these vectors into a final 0-100 "Trade Score", shipping the package back to the UI to be visually rendered in SVG rings and dynamic accordions.
-
----
-
-## 📊 The Dataset
-Machine learning models are only as good as their data. We couldn't just feed the model "last year's points" and expect it to predict the future. 
-
-Our dataset consists of over **1,600 individual player-seasons** extracted from the 2020 through 2025 NBA campaigns, transformed into **54 distinct features** per player:
-- **Base Metrics:** The standard box score stats (PPG, RPG, MPG) plus advanced analytics like Usage Rate and True Shooting %.
-- **Lag Features:** This was the game-changer. We created 5-year rolling windows (e.g., `ppg_lag1`, `ppg_lag5`). This forces the AI to acknowledge a player's long-term consistency floor.
-- **Trend Slopes:** We calculated mathematical trajectories over 2, 3, and 4-year periods to teach the model the difference between a 22-year-old scoring 15 points (rising) versus a 34-year-old scoring 15 points (declining).
-- **Career Anchors:** Metadata indicating how many years a player is removed from their absolute statistical peak.
-
-*(Note: During holdout cross-validation testing simulating the entire 2024-25 season, the model proved exceptionally accurate, predicting Points Per Game with an $R^2$ of **0.919** and a Mean Absolute Error of **1.37** points).*
+| Feature | Description |
+| :--- | :--- |
+| **Multi-Output Stat Prediction** | Forecasts 5 key metrics — PPG, RPG, APG, MPG, TS% — using a 54-feature XGBoost model trained on 5 years of temporal NBA data (2020–2025). |
+| **Explainable AI (XAI)** | SHAP-powered natural-language explanations tell users *why* a prediction was made (e.g., "His age of 34 is pulling the estimate down"). |
+| **Injury Risk Classification** | A Random Forest classifier evaluates historical medical data to assign Low / Moderate / High / Very High injury risk categories. |
+| **Monte Carlo Win Simulation** | Runs 500 probabilistic simulations per trade to project the net change in team wins (+/−) factoring in roster fit and injury risk. |
+| **Salary Cap Validation** | Analyzes trade financial feasibility under NBA CBA salary matching rules. |
+| **Positional Fit Penalties** | Detects scoring cannibalization and positional logjams to prevent artificially inflated projections. |
+| **Cinematic UI** | Dark-mode Glassmorphism interface with GSAP/Framer Motion animations, gate-opening intro sequence, and fully mobile-responsive design. |
 
 ---
 
-## 💻 Tech Stack
+## 🏗️ System Architecture
 
-### 🔹 Frontend (The Face)
-- **React 18** & **Vite** (Unbelievably fast HMR and compilation)
-- **Tailwind CSS v3** (Utility-first styling powering the Glassmorphism aesthetic)
-- **Framer Motion & GSAP** (Complex physics-based animations, loaders, and intro sequences)
-- **Lucide React** (Clean, consistent iconography)
-
-### 🔹 Backend (The Brains)
-- **Python 3.12** & **Flask 3.0** (The connective tissue API router)
-- **Scikit-Learn** & **XGBoost** (Core model mathematics and Random Forest classifications)
-- **SHAP** (Game-theory based machine learning explainability)
-- **Pandas** & **NumPy** (Lightning-fast dataset manipulation and Monte Carlo randomization)
-
-### 🔹 Database (The Memory)
-- **MongoDB** (NoSQL document ecosystem allowing hierarchical storage of yearly temporal stats and jagged injury logs without horrific SQL join constraints).
-
----
-
-## ⚙️ How to Run Locally
-
-If you want to spin up your own front-office terminal, you'll need two separate terminal windows.
-
-### 1. Boot up the Backend Machine Learning Engine
-Make sure you have your virtual environment activated and `requirements.txt` installed.
-```bash
-# Navigate to the root directory
-cd Research-Project
-# Start the Flask API & load the models into active memory
-python app.py
 ```
-*The server will initialize on `http://127.0.0.1:5000`*
-
-### 2. Boot up the Front Desk (React UI)
-```bash
-# Open a second terminal and navigate to the modern frontend
-cd frontend-modern
-# Install npm packages if it's your first time
-npm install
-# Start the Vite development server
-npm run dev
+┌─────────────────────────────────────────────────────────────┐
+│                    PRESENTATION TIER                        │
+│         React 18  ·  Vite  ·  Tailwind CSS  ·  GSAP        │
+│    ┌──────────┐ ┌──────────┐ ┌───────────┐ ┌────────────┐  │
+│    │TeamPanel │ │TradeBlock│ │ Results   │ │  SHAP      │  │
+│    │  .jsx    │ │  .jsx    │ │ Dashboard │ │ Explainer  │  │
+│    └──────────┘ └──────────┘ └───────────┘ └────────────┘  │
+└──────────────────────────┬──────────────────────────────────┘
+                           │  REST API (JSON)
+┌──────────────────────────▼──────────────────────────────────┐
+│                   APPLICATION LOGIC TIER                     │
+│            Flask 3.0  ·  Python 3.12  ·  SHAP               │
+│    ┌──────────────┐ ┌─────────────┐ ┌───────────────────┐   │
+│    │ XGBoost      │ │ Random      │ │  Monte Carlo      │   │
+│    │ MultiOutput  │ │ Forest Inj. │ │  Win Simulator    │   │
+│    │ Regressor    │ │ Classifier  │ │  (500 iterations) │   │
+│    └──────────────┘ └─────────────┘ └───────────────────┘   │
+│    ┌──────────────┐ ┌─────────────┐                         │
+│    │ Trade Score  │ │ Salary Cap  │                         │
+│    │ Engine       │ │ Validator   │                         │
+│    └──────────────┘ └─────────────┘                         │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│                       DATA TIER                              │
+│              MongoDB  ·  CSV Feature Caches                  │
+│    ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐  │
+│    │ players  │ │  teams   │ │ injuries │ │ salary_data  │  │
+│    └──────────┘ └──────────┘ └──────────┘ └──────────────┘  │
+└─────────────────────────────────────────────────────────────┘
 ```
-*The UI will launch on `http://localhost:5174`. Open this in your browser to start trading!*
 
 ---
-*Created by Satyam Chaturvedi, Sahil, and Baarathi as part of a comprehensive Computer Science Software Engineering capstone project.*
+
+## 🧠 Machine Learning Pipeline
+
+### Feature Engineering (54 Features)
+
+The model does not simply use last season's stats. It processes **54 carefully engineered temporal features** organized into four categories:
+
+| Category | Count | Examples |
+| :--- | :---: | :--- |
+| **Base Stats** | 16 | `age`, `points_per_game`, `true_shooting_pct`, `usage_rate`, `points_per_minute` |
+| **Lag Features** | 26 | `ppg_lag1` → `ppg_lag5`, `mpg_lag1` → `mpg_lag5`, `ts_pct_lag1` → `ts_pct_lag3` |
+| **Trend Features** | 4 | `ppg_trend_2yr`, `ppg_trend_3yr`, `ppg_trend_4yr`, `mpg_trend_2yr` |
+| **Career Features** | 8 | `peak_ppg`, `years_since_peak_ppg`, `career_ppg_avg`, `ppg_coefficient_variation` |
+
+### Model Accuracy (Backtested Against 2024–25 Season)
+
+| Target Metric | MAE | R² Score | Interpretation |
+| :--- | :---: | :---: | :--- |
+| Points Per Game | 1.37 | 0.919 | Within ~1 basket of actual scoring |
+| Rebounds Per Game | 0.52 | 0.908 | Highly reliable |
+| Assists Per Game | 0.36 | 0.926 | Excellent precision |
+| Minutes Per Game | 2.81 | 0.847 | Strong correlation |
+| True Shooting % | 0.04 | -1.21 | High variance — known limitation |
+
+---
+
+## 🔌 API Endpoints
+
+| Method | Endpoint | Description |
+| :---: | :--- | :--- |
+| `GET` | `/api/health` | System health check and model status |
+| `GET` | `/api/teams` | List all 30 NBA franchises |
+| `GET` | `/api/players?team=LAL` | Fetch active roster for a team |
+| `POST` | `/api/predict` | Predict next-season stats for a player |
+| `POST` | `/api/trade/evaluate` | Full trade evaluation with Monte Carlo sim |
+| `GET` | `/api/model/info` | Model metadata, feature list, and accuracy |
+
+---
+
+## 🛠️ Tech Stack
+
+### Backend
+- **Language:** Python 3.12
+- **Framework:** Flask 3.0
+- **ML Engine:** XGBoost, Scikit-learn
+- **Explainability:** SHAP (TreeExplainer)
+- **Data Processing:** Pandas, NumPy
+- **Database:** MongoDB (pymongo)
+
+### Frontend
+- **Framework:** React 18
+- **Build Tool:** Vite
+- **Styling:** Tailwind CSS v3
+- **Animations:** Framer Motion, GSAP
+- **Charts:** Recharts
+- **Icons:** Lucide React
+
+---
+
+## 📁 Project Structure
+
+```
+NBA-Trade-Analyzer/
+├── app.py                      # Flask REST API (main backend entry point)
+├── requirements.txt            # Python dependencies
+├── .env                        # Environment variables (MongoDB URI, ports)
+│
+├── models/                     # Serialized ML model binaries
+│   ├── player_multioutput_v2.pkl
+│   ├── injury_clf.pkl
+│   ├── shap_explainers_v2.pkl
+│   └── model_metadata_v2.json
+│
+├── services/
+│   └── trade_analyzer.py       # Core trade logic (fit penalties, Monte Carlo)
+│
+├── data/
+│   ├── processed/              # Engineered temporal CSV feature sets
+│   └── team_overrides_2025_26.json
+│
+├── notebooks/                  # Jupyter training notebooks
+│   ├── M2.ipynb                # Team stats integration & model training
+│   ├── M3_Injury_Model.ipynb   # Injury risk classifier
+│   └── M3_Salary_Cap.ipynb     # Salary cap analysis
+│
+├── frontend-modern/            # React SPA
+│   ├── src/
+│   │   ├── App.jsx             # Main application state & routing
+│   │   ├── api.js              # Axios API client
+│   │   ├── components/
+│   │   │   ├── Header.jsx
+│   │   │   ├── Hero.jsx
+│   │   │   ├── IntroAnimation.jsx
+│   │   │   ├── TeamPanel.jsx
+│   │   │   ├── TradeBlock.jsx
+│   │   │   ├── ResultsDashboard.jsx
+│   │   │   ├── ModelInfo.jsx
+│   │   │   └── About.jsx
+│   │   └── index.css           # Global Glassmorphism design system
+│   └── tailwind.config.js
+│
+└── scripts/                    # Data population & utility scripts
+```
+
+---
+
+## 👥 Team
+
+| Member | Module |
+| :--- | :--- |
+| **Satyam Chaturvedi** | Core ML Engine (XGBoost), Flask API, React Frontend, SHAP Integration |
+| **Sahil** | Team Statistics Analysis & Model Integration (M2) |
+| **Baarathi** | Injury Risk Classification & Salary Cap Analysis (M3) |
+
+---
+
+## 📄 License
+
+This project is developed for academic and research purposes at CHRIST (Deemed to be University), Department of Computer Science.
